@@ -26,3 +26,14 @@ func CreateWorld() *World {
 
 	return world
 }
+
+func (w *World) Destroy()          { C.NewtonDestroy(w.handle) }
+func (w *World) DestroyAllBodies() { C.NewtonDestroyAllBodies(w.handle) }
+func (w *World) InvalidateCache()  { C.NewtonInvalidateCache(w.handle) }
+
+//SetSolverModel sets the solver model for the world
+// 0 is default with perfect accuracy
+// 1 and greater increases iterations. Greater number less peformant but more accurate
+func (w *World) SetSolverModel(model int) { C.NewtonSetSolverModel(w.handle, C.int(model)) }
+
+//Skip multithredding for now
