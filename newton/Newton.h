@@ -117,6 +117,10 @@ extern "C" {
 	typedef struct NewtonSphereParam NewtonSphereParam;
 	typedef struct NewtonCapsuleParam NewtonCapsuleParam;
 	typedef struct NewtonCylinderParam NewtonCylinderParam;
+	//temp fix to get go to compile.  May remove Newton headers from this rep if
+	// it gets fixed in Newton's repository
+	typedef struct NewtonTaperedCapsuleParam NewtonTaperedCapsuleParam;
+	typedef struct NewtonTaperedCylinderParam NewtonTaperedCylinderParam;
 	typedef struct NewtonConvexHullParam NewtonConvexHullParam;
 	typedef struct NewtonCollisionTreeParam NewtonCollisionTreeParam;
 	typedef struct NewtonDeformableMeshParam NewtonDeformableMeshParam;
