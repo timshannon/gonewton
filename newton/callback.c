@@ -5,6 +5,6 @@
 #include "callback.h"
 
 
-void setGetTicksCountCB() {
-	NewtonSetPerformanceClock(goGetTicksCountCB);
+void setGetTicksCountCB(const NewtonWorld* const newtonWorld) {
+	NewtonSetPerformanceClock(newtonWorld, goGetTicksCountCB);
 }

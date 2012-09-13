@@ -9,8 +9,8 @@
 //dll for win32?
 #include "Newton.h"
 
-extern int goGetTicksCountCB(void);
+extern unsigned goGetTicksCountCB(void);
 
-void setGetTicksCountCB();
+void setGetTicksCountCB(const NewtonWorld* const newtonWorld);
 
 #endif //_CALLBACK_H_
