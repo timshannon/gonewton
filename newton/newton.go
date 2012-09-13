@@ -11,15 +11,15 @@ package newton
 */
 import "C"
 
-//import "unsafe"
-
 const (
 	DynamicBody = iota
 	KinematicBody
 	DeformableBody
 )
 
-type World struct{ handle *C.NewtonWorld }
+type World struct {
+	handle *C.NewtonWorld
+}
 
 func Version() int    { return int(C.NewtonWorldGetVersion()) }
 func MemoryUsed() int { return int(C.NewtonGetMemoryUsed()) }
@@ -41,14 +41,17 @@ func (w *World) InvalidateCache()  { C.NewtonInvalidateCache(w.handle) }
 func (w *World) SetSolverModel(model int) { C.NewtonSetSolverModel(w.handle, C.int(model)) }
 
 //Skip multithredding for now
-type GetTicksCountHandler func() int
+
+type GetTicksCountHandler func() uint
+
+var getTicksCount GetTicksCountHandler
 
 //export goGetTicksCountCB
-func goGetTicksCountCB() int {
+func goGetTicksCountCB() uint {
 	return getTicksCount()
 }
 
 func (w *World) SetPerformanceClock(f GetTicksCountHandler) {
 	getTicksCount = f
-	//C.NewtonSetPerformanceClock(w.handle, setGetTicksCountCB())
+	C.setGetTicksCountCB(w.handle)
 }
