@@ -6,6 +6,7 @@ package newton
 /*
 #cgo   linux LDFLAGS: -L/usr/local/lib -lNewton -lstdc++
 #include "Newton.h"
+#include "callback.h"
 #include <stdlib.h>
 */
 import "C"
@@ -40,3 +41,14 @@ func (w *World) InvalidateCache()  { C.NewtonInvalidateCache(w.handle) }
 func (w *World) SetSolverModel(model int) { C.NewtonSetSolverModel(w.handle, C.int(model)) }
 
 //Skip multithredding for now
+type GetTicksCountHandler func() int
+
+//export goGetTicksCountCB
+func goGetTicksCountCB() int {
+	return getTicksCount()
+}
+
+func (w *World) SetPerformanceClock(f GetTicksCountHandler) {
+	getTicksCount = f
+	//C.NewtonSetPerformanceClock(w.handle, setGetTicksCountCB())
+}
