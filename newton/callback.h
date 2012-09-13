@@ -10,7 +10,9 @@
 #include "Newton.h"
 
 extern unsigned goGetTicksCountCB(void);
+void goBodyLeaveWorldCB(NewtonBody* , int);
 
-void setGetTicksCountCB(const NewtonWorld* const newtonWorld);
+void setGetTicksCountCB(NewtonWorld*);
+void setBodyLeaveWorldCB(NewtonWorld*);
 
 #endif //_CALLBACK_H_

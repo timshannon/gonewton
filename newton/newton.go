@@ -6,7 +6,6 @@ package newton
 /*
 #cgo   linux LDFLAGS: -L/usr/local/lib -lNewton -lstdc++
 #include "Newton.h"
-#include "callback.h"
 #include <stdlib.h>
 */
 import "C"
@@ -19,6 +18,10 @@ const (
 
 type World struct {
 	handle *C.NewtonWorld
+}
+
+type Body struct {
+	handle *C.NewtonBody
 }
 
 func Version() int    { return int(C.NewtonWorldGetVersion()) }
@@ -42,16 +45,34 @@ func (w *World) SetSolverModel(model int) { C.NewtonSetSolverModel(w.handle, C.i
 
 //Skip multithredding for now
 
-type GetTicksCountHandler func() uint
-
-var getTicksCount GetTicksCountHandler
-
-//export goGetTicksCountCB
-func goGetTicksCountCB() uint {
-	return getTicksCount()
+func (w *World) ReadPeformanceTicks(performanceEntry uint) uint {
+	return uint(C.NewtonReadPerformanceTicks(w.handle, C.unsigned(performanceEntry)))
 }
 
-func (w *World) SetPerformanceClock(f GetTicksCountHandler) {
-	getTicksCount = f
-	C.setGetTicksCountCB(w.handle)
+func (w *World) BroadphaseAlgorithm() int {
+	return int(C.NewtonGetBroadphaseAlgorithm(w.handle))
+}
+
+func (w *World) SetBroadphaseAlgorithm(algorithmType int) {
+	C.NewtonSelectBroadphaseAlgorithm(w.handle, C.int(algorithmType))
+}
+
+func (w *World) Update(timestep float32) {
+	C.NewtonUpdate(w.handle, C.dFloat(timestep))
+}
+
+func (w *World) UpdateAsync(timestep float32) {
+	C.NewtonUpdateAsync(w.handle, C.dFloat(timestep))
+}
+
+func (w *World) WaitForUpdateToFinish() {
+	C.NewtonWaitForUpdateToFinish(w.handle)
+}
+
+func (w *World) SetFrictionModel(model int) {
+	C.NewtonSetFrictionModel(w.handle, C.int(model))
+}
+
+func (w *World) SetMinimumFrameRate(frameRate float32) {
+	C.NewtonSetMinimumFrameRate(w.handle, C.dFloat(frameRate))
 }
