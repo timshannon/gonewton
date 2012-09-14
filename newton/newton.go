@@ -9,6 +9,7 @@ package newton
 #include <stdlib.h>
 */
 import "C"
+import "unsafe"
 
 const (
 	DynamicBody = iota
@@ -22,6 +23,10 @@ type World struct {
 
 type Body struct {
 	handle *C.NewtonBody
+}
+
+type Joint struct {
+	handle *C.NewtonJoint
 }
 
 func Version() int    { return int(C.NewtonWorldGetVersion()) }
@@ -75,4 +80,12 @@ func (w *World) SetFrictionModel(model int) {
 
 func (w *World) SetMinimumFrameRate(frameRate float32) {
 	C.NewtonSetMinimumFrameRate(w.handle, C.dFloat(frameRate))
+}
+
+func (w *World) SetUserData(userData *interface{}) {
+	C.NewtonWorldSetUserData(w.handle, unsafe.Pointer(userData))
+}
+
+func (w *World) UserData() *interface{} {
+	return (*interface{})(C.NewtonWorldGetUserData(w.handle))
 }
