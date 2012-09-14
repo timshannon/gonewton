@@ -10,9 +10,13 @@
 #include "Newton.h"
 
 extern unsigned goGetTicksCountCB(void);
-void goBodyLeaveWorldCB(NewtonBody* , int);
+extern void goBodyLeaveWorldCB(NewtonBody* , int);
+extern void goJointIteratorCB(NewtonJoint*, void*);
+extern void goBodyIteratorCB(NewtonBody*, void*);
 
 void setGetTicksCountCB(NewtonWorld*);
 void setBodyLeaveWorldCB(NewtonWorld*);
+void setJointIteratorCB(NewtonWorld*, void*);
+void setBodyIteratorCB(NewtonWorld*,dFloat*, dFloat*, void*);
 
 #endif //_CALLBACK_H_

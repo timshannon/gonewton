@@ -12,3 +12,11 @@ void setGetTicksCountCB(NewtonWorld* newtonWorld) {
 void setBodyLeaveWorldCB(NewtonWorld* newtonWorld) {
 	NewtonSetBodyLeaveWorldEvent(newtonWorld, (NewtonBodyLeaveWorld)goBodyLeaveWorldCB);
 }
+
+void setJointIteratorCB(NewtonWorld* newtonWorld, void* userData) {
+	NewtonWorldForEachJointDo(newtonWorld, (NewtonJointIterator)goJointIteratorCB, userData);
+}
+
+void setBodyIteratorCB(NewtonWorld* newtonWorld, dFloat* p0, dFloat* p1, void* userData) {
+	NewtonWorldForEachBodyInAABBDo(newtonWorld, p0, p1, (NewtonBodyIterator)goBodyIteratorCB, userData);
+}
