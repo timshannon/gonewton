@@ -10,7 +10,10 @@ package newton
 #include <stdlib.h>
 */
 import "C"
-import "unsafe"
+import (
+	"reflect"
+	"unsafe"
+)
 
 type GetTicksCountHandler func() uint
 
@@ -82,5 +85,12 @@ var rayFilter RayFilterHandler
 func goRayFilterCB(body *C.NewtonBody, hitNormal *C.dFloat, collisionID C.int,
 	userData *interface{}, intersectParam C.dFloat) {
 	gBody := &Body{body}
-	rayFilter(gBody, 
+	//Test 
+	var gHitNormal []float32
+	sHead := (*reflect.SliceHeader)((unsafe.Pointer(&gHitNormal)))
+	sHead.Cap = 3
+	sHead.Len = 3
+	sHead.Data = uintptr(unsafe.Pointer(hitNormal))
+
+	rayFilter(gBody, gHitNormal, int(collisionID), (*interface{})(userData), float32(intersectParam))
 }
