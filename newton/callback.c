@@ -18,5 +18,6 @@ void setJointIteratorCB(NewtonWorld* newtonWorld, void* userData) {
 }
 
 void setBodyIteratorCB(NewtonWorld* newtonWorld, dFloat* p0, dFloat* p1, void* userData) {
-	NewtonWorldForEachBodyInAABBDo(newtonWorld, p0, p1, (NewtonBodyIterator)goBodyIteratorCB, userData);
+	NewtonWorldForEachBodyInAABBDo(newtonWorld, p0, p1, 
+			(NewtonBodyIterator)goBodyIteratorCB, userData);
 }
