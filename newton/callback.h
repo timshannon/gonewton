@@ -20,6 +20,8 @@ void setGetTicksCountCB(NewtonWorld*);
 void setBodyLeaveWorldCB(NewtonWorld*);
 void setJointIteratorCB(NewtonWorld*, void*);
 void setBodyIteratorCB(NewtonWorld*,dFloat*, dFloat*, void*);
-void setRayFilterCBs(NewtonWorld*, dFloat*, dFloat*, void*);
+void RayCast(NewtonWorld*, dFloat*, dFloat*, void*);
+int ConvexCast(NewtonWorld*, dFloat*, dFloat*, NewtonCollision*, dFloat*, void*, 
+		NewtonWorldConvexCastReturnInfo*, int, int);
 
 #endif //_CALLBACK_H_

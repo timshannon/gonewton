@@ -22,7 +22,15 @@ void setBodyIteratorCB(NewtonWorld* newtonWorld, dFloat* p0, dFloat* p1, void* u
 			(NewtonBodyIterator)goBodyIteratorCB, userData);
 }
 
-void setRayFilterCBs(NewtonWorld* world, dFloat* p0, dFloat* p1, void* userData) {
+void RayCast(NewtonWorld* world, dFloat* p0, dFloat* p1, void* userData) {
 	NewtonWorldRayCast(world, p0, p1, (NewtonWorldRayFilterCallback)goRayFilterCB, 
 			userData, (NewtonWorldRayPrefilterCallback)goRayPrefilterCB);
+}
+
+int ConvexCast(NewtonWorld* world, dFloat* matrix, dFloat* target, NewtonCollision* shape, 
+		dFloat* hitParam, void* userData, NewtonWorldConvexCastReturnInfo* info,
+		 int maxContactsCount, int threadIndex) {
+	NewtonWorldConvexCast(world, matrix, target, shape, hitParam, userData, 
+		(NewtonWorldRayPrefilterCallback)goRayPrefilterCB, info, maxContactsCount, threadIndex);
+
 }
