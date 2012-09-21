@@ -13,10 +13,13 @@ extern unsigned goGetTicksCountCB(void);
 extern void goBodyLeaveWorldCB(NewtonBody* , int);
 extern void goJointIteratorCB(NewtonJoint*, void*);
 extern void goBodyIteratorCB(NewtonBody*, void*);
+extern dFloat goRayFilterCB(NewtonBody*, dFloat*, int, void*, dFloat); 
+extern unsigned goRayPrefilterCB(NewtonBody*, NewtonCollision*, void*);
 
 void setGetTicksCountCB(NewtonWorld*);
 void setBodyLeaveWorldCB(NewtonWorld*);
 void setJointIteratorCB(NewtonWorld*, void*);
 void setBodyIteratorCB(NewtonWorld*,dFloat*, dFloat*, void*);
+void setRayFilterCBs(NewtonWorld*, dFloat*, dFloat*, void*);
 
 #endif //_CALLBACK_H_

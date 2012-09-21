@@ -77,13 +77,13 @@ func (w *World) ForEachBodyInAABBDo(p0, p1 []float32, f BodyIteratorHandler,
 }
 
 type RayFilterHandler func(body *Body, hitNormal []float32, collisionID int,
-	userData *interface{}, intersectParam float32)
+	userData *interface{}, intersectParam float32) float32
 
 var rayFilter RayFilterHandler
 
 //export goRayFilterCB
 func goRayFilterCB(body *C.NewtonBody, hitNormal *C.dFloat, collisionID C.int,
-	userData *interface{}, intersectParam C.dFloat) {
+	userData unsafe.Pointer, intersectParam C.dFloat) C.dFloat {
 	gBody := &Body{body}
 	//Test 
 	var gHitNormal []float32
@@ -92,5 +92,22 @@ func goRayFilterCB(body *C.NewtonBody, hitNormal *C.dFloat, collisionID C.int,
 	sHead.Len = 3
 	sHead.Data = uintptr(unsafe.Pointer(hitNormal))
 
-	rayFilter(gBody, gHitNormal, int(collisionID), (*interface{})(userData), float32(intersectParam))
+	return C.dFloat(rayFilter(gBody, gHitNormal, int(collisionID),
+		(*interface{})(userData), float32(intersectParam)))
+}
+
+type RayPrefilterHandler func(body *Body, collision *Collision, userData *interface{}) uint
+
+var rayPrefilter RayPrefilterHandler
+
+//export goRayPrefilterCB
+func goRayPrefilterCB(body *C.NewtonBody, collision *C.NewtonCollision, userData unsafe.Pointer) C.unsigned {
+	gBody := &Body{body}
+	gCollision := &Collision{collision}
+	return C.unsigned(rayPrefilter(gBody, gCollision, (*interface{})(userData)))
+}
+
+func (w *World) RayCast(p0 []float32, p1 []float32, filter RayFilterHandler,
+	userData *interface{}, prefilter RayPrefilterHandler) {
+
 }

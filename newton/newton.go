@@ -29,6 +29,14 @@ type Joint struct {
 	handle *C.NewtonJoint
 }
 
+type Material struct {
+	handle *C.NewtonMaterial
+}
+
+type Collision struct {
+	handle *C.NewtonCollision
+}
+
 func Version() int    { return int(C.NewtonWorldGetVersion()) }
 func MemoryUsed() int { return int(C.NewtonGetMemoryUsed()) }
 

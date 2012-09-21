@@ -21,3 +21,8 @@ void setBodyIteratorCB(NewtonWorld* newtonWorld, dFloat* p0, dFloat* p1, void* u
 	NewtonWorldForEachBodyInAABBDo(newtonWorld, p0, p1, 
 			(NewtonBodyIterator)goBodyIteratorCB, userData);
 }
+
+void setRayFilterCBs(NewtonWorld* world, dFloat* p0, dFloat* p1, void* userData) {
+	NewtonWorldRayCast(world, p0, p1, (NewtonWorldRayFilterCallback)goRayFilterCB, 
+			userData, (NewtonWorldRayPrefilterCallback)goRayPrefilterCB);
+}
