@@ -15,6 +15,10 @@ import (
 	"unsafe"
 )
 
+//To simplify the interface and to work around some limitations with cgo based
+// callbacks, there will only be one global instance of each callback type
+// even though the library could support more.
+
 type GetTicksCountHandler func() uint
 
 var getTicksCount GetTicksCountHandler
@@ -107,7 +111,34 @@ func goRayPrefilterCB(body *C.NewtonBody, collision *C.NewtonCollision, userData
 	return C.unsigned(rayPrefilter(gBody, gCollision, (*interface{})(userData)))
 }
 
-func (w *World) RayCast(p0 []float32, p1 []float32, filter RayFilterHandler,
-	userData *interface{}, prefilter RayPrefilterHandler) {
+func SetRayFilterHandler(f RayFilterHandler) {
+	rayFilter = f
+}
+
+func SetRayPrefilterHandler(f RayPrefilterHandler) {
+	rayPrefilter = f
+}
+
+func (w *World) RayCast(p0 []float32, p1 []float32, userData *interface{}) {
+	C.RayCast(w.handle, (*C.dFloat)(&p0[0]), (*C.dFloat)(&p1[0]), unsafe.Pointer(userData))
+}
+
+type ConvexCastReturnInfo struct {
+	Point            []float32
+	Normal           []float32
+	NormalOnHitPoint []float32
+	Penetration      float32
+	ContactID        int
+	HitBody          *Body
+}
+
+func (w *World) ConvexCast(matrix []float32, target []float32, shape *Collision, hitParam *float32,
+	userData *interface{}, maxContactsCount int, threadIndex int) []*ConvexCastReturnInfo {
+
+	C.ConvexCast(w.handle, (*C.dFloat)(&matrix[0]), (*C.dFloat)(&target[0]), shape.handle, 
+		(*C.dFloat)(hitParam), unsafe.Pointer(userData), NewtonWorldConvexCastReturnInfo*, int, int);
+	returnInfo := &ConvexCastReturnInfo{}
+
+	//return returnInfo
 
 }
