@@ -34,3 +34,9 @@ int ConvexCast(NewtonWorld* world, dFloat* matrix, dFloat* target, NewtonCollisi
 		(NewtonWorldRayPrefilterCallback)goRayPrefilterCB, info, maxContactsCount, threadIndex);
 
 }
+
+void CopyFloatArray(dFloat* src, dFloat* dest, int len) {
+	int i;
+	for(i = 0; i < len; i++) 
+		*(dest+i) = *(src+i);
+}

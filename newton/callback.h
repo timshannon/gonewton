@@ -16,6 +16,8 @@ extern void goBodyIteratorCB(NewtonBody*, void*);
 extern dFloat goRayFilterCB(NewtonBody*, dFloat*, int, void*, dFloat); 
 extern unsigned goRayPrefilterCB(NewtonBody*, NewtonCollision*, void*);
 
+void CopyFloatArray(dFloat*, dFloat*, int); 
+
 void setGetTicksCountCB(NewtonWorld*);
 void setBodyLeaveWorldCB(NewtonWorld*);
 void setJointIteratorCB(NewtonWorld*, void*);
