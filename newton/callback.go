@@ -11,7 +11,6 @@ package newton
 */
 import "C"
 import (
-	"reflect"
 	"unsafe"
 )
 
@@ -89,12 +88,9 @@ var rayFilter RayFilterHandler
 func goRayFilterCB(body *C.NewtonBody, hitNormal *C.dFloat, collisionID C.int,
 	userData unsafe.Pointer, intersectParam C.dFloat) C.dFloat {
 	gBody := &Body{body}
-	//Test 
-	var gHitNormal []float32
-	sHead := (*reflect.SliceHeader)((unsafe.Pointer(&gHitNormal)))
-	sHead.Cap = 3
-	sHead.Len = 3
-	sHead.Data = uintptr(unsafe.Pointer(hitNormal))
+
+	gHitNormal := make([]float32, 3)
+	C.CopyFloatArray(hitNormal, (*C.dFloat)(&gHitNormal[0]), 3)
 
 	return C.dFloat(rayFilter(gBody, gHitNormal, int(collisionID),
 		(*interface{})(userData), float32(intersectParam)))
@@ -135,10 +131,12 @@ type ConvexCastReturnInfo struct {
 func (w *World) ConvexCast(matrix []float32, target []float32, shape *Collision, hitParam *float32,
 	userData *interface{}, maxContactsCount int, threadIndex int) []*ConvexCastReturnInfo {
 
-	C.ConvexCast(w.handle, (*C.dFloat)(&matrix[0]), (*C.dFloat)(&target[0]), shape.handle, 
-		(*C.dFloat)(hitParam), unsafe.Pointer(userData), NewtonWorldConvexCastReturnInfo*, int, int);
-	returnInfo := &ConvexCastReturnInfo{}
-
-	//return returnInfo
+	var size int
+	var cInfo unsafe.Pointer
+	size = int(C.ConvexCast(w.handle, (*C.dFloat)(&matrix[0]), (*C.dFloat)(&target[0]), shape.handle,
+		(*C.dFloat)(hitParam), unsafe.Pointer(userData), (*C.cInfo, C.int(maxContactsCount),
+		C.int(threadIndex)))
+	returnInfo := make([]*ConvexCastReturnInfo, size)
+	return returnInfo
 
 }
