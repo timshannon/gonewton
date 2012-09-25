@@ -89,10 +89,7 @@ func goRayFilterCB(body *C.NewtonBody, hitNormal *C.dFloat, collisionID C.int,
 	userData unsafe.Pointer, intersectParam C.dFloat) C.dFloat {
 	gBody := &Body{body}
 
-	gHitNormal := make([]float32, 3)
-	C.CopyFloatArray(hitNormal, (*C.dFloat)(&gHitNormal[0]), 3)
-
-	return C.dFloat(rayFilter(gBody, gHitNormal, int(collisionID),
+	return C.dFloat(rayFilter(gBody, goFloats(hitNormal, 3), int(collisionID),
 		(*interface{})(userData), float32(intersectParam)))
 }
 
@@ -119,6 +116,13 @@ func (w *World) RayCast(p0 []float32, p1 []float32, userData *interface{}) {
 	C.RayCast(w.handle, (*C.dFloat)(&p0[0]), (*C.dFloat)(&p1[0]), unsafe.Pointer(userData))
 }
 
+//goFloats creates a float32 slice of the given size of the passed in c array pointer
+func goFloats(cArray *C.dFloat, size int) []float32 {
+	slice := make([]float32, size)
+	C.CopyFloatArray(cArray, (*C.dFloat)(&slice[0]), C.int(size))
+	return slice
+}
+
 type ConvexCastReturnInfo struct {
 	Point            []float32
 	Normal           []float32
@@ -132,11 +136,23 @@ func (w *World) ConvexCast(matrix []float32, target []float32, shape *Collision,
 	userData *interface{}, maxContactsCount int, threadIndex int) []*ConvexCastReturnInfo {
 
 	var size int
-	var cInfo unsafe.Pointer
+	cInfo := make([]C.NewtonWorldConvexCastReturnInfo, maxContactsCount)
 	size = int(C.ConvexCast(w.handle, (*C.dFloat)(&matrix[0]), (*C.dFloat)(&target[0]), shape.handle,
-		(*C.dFloat)(hitParam), unsafe.Pointer(userData), (*C.cInfo, C.int(maxContactsCount),
+		(*C.dFloat)(hitParam), unsafe.Pointer(userData), &cInfo[0], C.int(maxContactsCount),
 		C.int(threadIndex)))
 	returnInfo := make([]*ConvexCastReturnInfo, size)
-	return returnInfo
 
+	for i := range returnInfo {
+		returnInfo[i] = &ConvexCastReturnInfo{
+			Point:            goFloats(&cInfo[i].m_point[0], 4),
+			Normal:           goFloats(&cInfo[i].m_normal[0], 4),
+			NormalOnHitPoint: goFloats(&cInfo[i].m_normalOnHitPoint[0], 4),
+			Penetration:      float32(cInfo[i].m_penetration),
+			ContactID:        int(cInfo[i].m_contactID),
+			HitBody:          &Body{cInfo[i].m_hitBody},
+		}
+
+	}
+
+	return returnInfo
 }
