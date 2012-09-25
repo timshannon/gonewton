@@ -15,8 +15,8 @@ extern void goJointIteratorCB(NewtonJoint*, void*);
 extern void goBodyIteratorCB(NewtonBody*, void*);
 extern dFloat goRayFilterCB(NewtonBody*, dFloat*, int, void*, dFloat); 
 extern unsigned goRayPrefilterCB(NewtonBody*, NewtonCollision*, void*);
-
-void CopyFloatArray(dFloat*, dFloat*, int); 
+extern int goOnAABBOverlapCB(NewtonMaterial*,NewtonBody*, NewtonBody*, int);
+extern void goContactsProcessCB(NewtonJoint*, dFloat, int);
 
 void setGetTicksCountCB(NewtonWorld*);
 void setBodyLeaveWorldCB(NewtonWorld*);
@@ -26,4 +26,9 @@ void RayCast(NewtonWorld*, dFloat*, dFloat*, void*);
 int ConvexCast(NewtonWorld*, dFloat*, dFloat*, NewtonCollision*, dFloat*, void*, 
 		NewtonWorldConvexCastReturnInfo*, int, int);
 
+
+
+
+//helpers
+void CopyFloatArray(dFloat*, dFloat*, int); 
 #endif //_CALLBACK_H_

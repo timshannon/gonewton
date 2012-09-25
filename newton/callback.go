@@ -34,7 +34,6 @@ func (w *World) SetPerformanceClock(f GetTicksCountHandler) {
 
 type BodyLeaveWorldHandler func(body *Body, threadIndex int)
 
-//TODO: Test 
 var bodyLeaveWorld BodyLeaveWorldHandler
 
 //export goBodyLeaveWorldCB
@@ -155,4 +154,31 @@ func (w *World) ConvexCast(matrix []float32, target []float32, shape *Collision,
 	}
 
 	return returnInfo
+}
+
+type OnAABBOverlapHandler func(material *Material, body0, body1 *Body, threadIndex int) int
+
+var onAABBOverlap OnAABBOverlapHandler
+
+//export goOnAABBOverlapCB
+func goOnAABBOverlapCB(material *C.NewtonMaterial, body0, body1 *C.NewtonBody, threadIndex C.int) C.int {
+	gMaterial := &Material{material}
+	gBody0 := &Body{body0}
+	gBody1 := &Body{body1}
+
+	return C.int(onAABBOverlap(gMaterial, gBody0, gBody1, int(threadIndex)))
+}
+
+type ContactsProcessHandler func(contact *Joint, timestep float32, threadIndex int)
+
+var contactsProcess ContactsProcessHandler
+
+//export goContactsProcessCB
+func goContactsProcessCB(contact *C.NewtonJoint, timestep C.dFloat, threadIndex C.int) {
+	gJoint := &Joint{contact}
+	contactsProcess(gJoint, float32(timestep), int(threadIndex))
+}
+
+func (w *World) SetMaterialCollisionCallback(matid0, matid1 int, userData *interface{}) {
+
 }
