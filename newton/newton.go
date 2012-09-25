@@ -97,3 +97,31 @@ func (w *World) SetUserData(userData *interface{}) {
 func (w *World) UserData() *interface{} {
 	return (*interface{})(C.NewtonWorldGetUserData(w.handle))
 }
+
+func (w *World) BodyCount() int {
+	return int(C.NewtonWorldGetBodyCount(w.handle))
+}
+
+func (w *World) ConstraintCount() int {
+	return int(C.NewtonWorldGetConstraintCount(w.handle))
+}
+
+func (w *World) CreateMaterialGroupID() int {
+	return int(C.NewtonMaterialCreateGroupID(w.handle))
+}
+
+func (w *World) DefaultMaterialGroupID() int {
+	return int(C.NewtonMaterialGetDefaultGroupID(w.handle))
+}
+
+func (w *World) DestroyAllMaterialGroupID() {
+	C.NewtonMaterialDestroyAllGroupID(w.handle)
+}
+
+func (w *World) MaterialUserData(matid0, matid1 int) *interface{} {
+	return (*interface{})(C.NewtonMaterialGetUserData(w.handle, C.int(matid0), C.int(matid1)))
+}
+
+func (w *World) SetMaterialSurfaceThickness(matid0, matid1 int, thickness float32) {
+	C.NewtonMaterialSetSurfaceThickness(w.handle, C.int(matid0), C.int(matid1), C.dFloat(thickness))
+}
