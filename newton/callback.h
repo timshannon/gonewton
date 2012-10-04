@@ -25,6 +25,8 @@ void setBodyIteratorCB(NewtonWorld*,dFloat*, dFloat*, void*);
 void RayCast(NewtonWorld*, dFloat*, dFloat*, void*);
 int ConvexCast(NewtonWorld*, dFloat*, dFloat*, NewtonCollision*, dFloat*, void*, 
 		NewtonWorldConvexCastReturnInfo*, int, int);
+void SetCollisionCB(NewtonWorld*, int, int, void*);
+
 
 
 
