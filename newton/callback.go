@@ -117,6 +117,8 @@ func (w *World) RayCast(p0 []float32, p1 []float32, userData *interface{}) {
 
 //goFloats creates a float32 slice of the given size of the passed in c array pointer
 func goFloats(cArray *C.dFloat, size int) []float32 {
+	//Copy for now.  Maybe we'll try with using the slice header to repoint the data
+	// instead if preformance thrashes with this
 	slice := make([]float32, size)
 	C.CopyFloatArray(cArray, (*C.dFloat)(&slice[0]), C.int(size))
 	return slice
@@ -158,7 +160,7 @@ func (w *World) ConvexCast(matrix []float32, target []float32, shape *Collision,
 
 type OnAABBOverlapHandler func(material *Material, body0, body1 *Body, threadIndex int) int
 
-var onAABBOverlap OnAABBOverlapHandler
+var gOnAABBOverlap OnAABBOverlapHandler
 
 //export goOnAABBOverlapCB
 func goOnAABBOverlapCB(material *C.NewtonMaterial, body0, body1 *C.NewtonBody, threadIndex C.int) C.int {
@@ -166,19 +168,22 @@ func goOnAABBOverlapCB(material *C.NewtonMaterial, body0, body1 *C.NewtonBody, t
 	gBody0 := &Body{body0}
 	gBody1 := &Body{body1}
 
-	return C.int(onAABBOverlap(gMaterial, gBody0, gBody1, int(threadIndex)))
+	return C.int(gOnAABBOverlap(gMaterial, gBody0, gBody1, int(threadIndex)))
 }
 
 type ContactsProcessHandler func(contact *Joint, timestep float32, threadIndex int)
 
-var contactsProcess ContactsProcessHandler
+var gContactsProcess ContactsProcessHandler
 
 //export goContactsProcessCB
 func goContactsProcessCB(contact *C.NewtonJoint, timestep C.dFloat, threadIndex C.int) {
 	gJoint := &Joint{contact}
-	contactsProcess(gJoint, float32(timestep), int(threadIndex))
+	gContactsProcess(gJoint, float32(timestep), int(threadIndex))
 }
 
-func (w *World) SetMaterialCollisionCallback(matid0, matid1 int, userData *interface{}) {
-
+func (w *World) SetMaterialCollisionCallback(matid0, matid1 int, userData *interface{},
+	onAABBOverlap OnAABBOverlapHandler, contactsProcess ContactsProcessHandler) {
+	gOnAABBOverlap = onAABBOverlap
+	gContactsProcess = contactsProcess
+	C.SetCollisionCB(w.handle, C.int(matid0), C.int(matid1), unsafe.Pointer(userData))
 }

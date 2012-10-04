@@ -35,6 +35,11 @@ int ConvexCast(NewtonWorld* world, dFloat* matrix, dFloat* target, NewtonCollisi
 
 }
 
+void SetCollisionCB(NewtonWorld* world, int id0, int id1, void* userData) {
+	NewtonMaterialSetCollisionCallback(world, id0, id1, userData, (NewtonOnAABBOverlap)goOnAABBOverlapCB, 
+		(NewtonContactsProcess)goContactsProcessCB);
+}
+
 void CopyFloatArray(dFloat* src, dFloat* dest, int len) {
 	int i;
 	for(i = 0; i < len; i++) 
