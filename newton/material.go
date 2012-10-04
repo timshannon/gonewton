@@ -62,3 +62,7 @@ func (w *World) NextMaterial(material *Material) *Material {
 func (m *Material) UserData() *interface{} {
 	return (*interface{})(C.NewtonMaterialGetMaterialPairUserData(m.handle))
 }
+
+func (m *Material) ContactFaceAttribute() uint {
+	return uint(C.NewtonMaterialGetContactFaceAttribute(m.handle))
+}
