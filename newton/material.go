@@ -66,3 +66,63 @@ func (m *Material) UserData() *interface{} {
 func (m *Material) ContactFaceAttribute() uint {
 	return uint(C.NewtonMaterialGetContactFaceAttribute(m.handle))
 }
+
+func (m *Material) BodyCollidingShape(body *Body) *Collision {
+	collision := &Collision{C.NewtonMaterialGetBodyCollidingShape(m.handle, body.handle)}
+	return collision
+}
+
+func (m *Material) ContactNormalSpeed() float32 {
+	return float32(C.NewtonMaterialGetContactNormalSpeed(m.handle))
+}
+
+func (m *Material) ContactForce(body *Body, force []float32) {
+	C.NewtonMaterialGetContactForce(m.handle, body.handle, (*C.dFloat)(&force[0]))
+}
+
+func (m *Material) ContactPositionAndNormal(body *Body, position, normal []float32) {
+	C.NewtonMaterialGetContactPositionAndNormal(m.handle, body.handle, (*C.dFloat)(&position[0]),
+		(*C.dFloat)(&normal[0]))
+}
+
+func (m *Material) ContactTangentDirections(body *Body, dir0, dir1 []float32) {
+	C.NewtonMaterialGetContactTangentDirections(m.handle, body.handle, (*C.dFloat)(&dir0[0]),
+		(*C.dFloat)(&dir1[0]))
+}
+
+func (m *Material) ContactTangentSpeed(index int) float32 {
+	return float32(C.NewtonMaterialGetContactTangentSpeed(m.handle, C.int(index)))
+}
+
+func (m *Material) SetContactSoftness(softness float32) {
+	C.NewtonMaterialSetContactSoftness(m.handle, C.dFloat(softness))
+}
+
+func (m *Material) SetContactElasticity(restitution float32) {
+	C.NewtonMaterialSetContactElasticity(m.handle, C.dFloat(restitution))
+}
+
+func (m *Material) SetContactFrictionState(state, index int) {
+	C.NewtonMaterialSetContactFrictionState(m.handle, C.int(state), C.int(index))
+}
+
+func (m *Material) SetContactFrictionCoef(staticCoef, kineticCoef float32, index int) {
+	C.NewtonMaterialSetContactFrictionCoef(m.handle, C.dFloat(staticCoef), C.dFloat(kineticCoef),
+		C.int(index))
+}
+
+func (m *Material) SetContactNormalAcceleration(accel float32) {
+	C.NewtonMaterialSetContactNormalAcceleration(m.handle, C.dFloat(accel))
+}
+
+func (m *Material) SetContactNormalDirection(directionVector []float32) {
+	C.NewtonMaterialSetContactNormalDirection(m.handle, (*C.dFloat)(&directionVector[0]))
+}
+
+func (m *Material) SetContactTangentAcceleration(accel float32, index int) {
+	C.NewtonMaterialSetContactTangentAcceleration(m.handle, C.dFloat(accel), C.int(index))
+}
+
+func (m *Material) ContactRotateTangentDirections(directionVector []float32) {
+	C.NewtonMaterialContactRotateTangentDirections(m.handle, (*C.dFloat)(&directionVector[0]))
+}
