@@ -17,6 +17,10 @@ const (
 	DeformableBody
 )
 
+//used for bools from c interfaces // I'm sure there's a better way to do this, but this works for now
+var Bool = map[int]bool{0: false, 1: true}
+var Int = map[bool]C.int{false: C.int(0), true: C.int(1)}
+
 type World struct {
 	handle *C.NewtonWorld
 }
@@ -27,10 +31,6 @@ type Body struct {
 
 type Joint struct {
 	handle *C.NewtonJoint
-}
-
-type Collision struct {
-	handle *C.NewtonCollision
 }
 
 func Version() int    { return int(C.NewtonWorldGetVersion()) }
