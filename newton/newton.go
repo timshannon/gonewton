@@ -17,20 +17,33 @@ const (
 	DeformableBody
 )
 
-//used for bools from c interfaces // I'm sure there's a better way to do this, but this works for now
+//A note on object user data: Newton's internal user data pointer
+// will solely be used for keeping track of the go object pointer
+// A Go only empty interface will be used to hold the user's go data
+// To an end user of this library, it shouldn't matter and be seemless
+// The golang objects need to be kept in a global map so that the GC
+// doesn't relaim them.
+
+var nObjects map[uintptr]interface{}
+
+//used for bools from c interfaces 
+// I'm sure there's a better way to do this, but this works for now
 var Bool = map[int]bool{0: false, 1: true}
 var Int = map[bool]C.int{false: C.int(0), true: C.int(1)}
 
 type World struct {
 	handle *C.NewtonWorld
+	//UserData interface{}
 }
 
 type Body struct {
 	handle *C.NewtonBody
+	//UserData interface{}
 }
 
 type Joint struct {
 	handle *C.NewtonJoint
+	//UserData interface{}
 }
 
 func Version() int    { return int(C.NewtonWorldGetVersion()) }
@@ -39,6 +52,8 @@ func MemoryUsed() int { return int(C.NewtonGetMemoryUsed()) }
 func CreateWorld() *World {
 	world := new(World)
 	world.handle = C.NewtonCreate()
+
+	nObjects[uintptr(unsafe.Pointer(world))] = world
 
 	return world
 }
@@ -84,14 +99,6 @@ func (w *World) SetFrictionModel(model int) {
 
 func (w *World) SetMinimumFrameRate(frameRate float32) {
 	C.NewtonSetMinimumFrameRate(w.handle, C.dFloat(frameRate))
-}
-
-func (w *World) SetUserData(userData *interface{}) {
-	C.NewtonWorldSetUserData(w.handle, unsafe.Pointer(userData))
-}
-
-func (w *World) UserData() *interface{} {
-	return (*interface{})(C.NewtonWorldGetUserData(w.handle))
 }
 
 func (w *World) BodyCount() int {

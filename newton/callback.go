@@ -187,3 +187,33 @@ func (w *World) SetMaterialCollisionCallback(matid0, matid1 int, userData *inter
 	gContactsProcess = contactsProcess
 	C.SetCollisionCB(w.handle, C.int(matid0), C.int(matid1), unsafe.Pointer(userData))
 }
+
+type MeshCollisionCollideDesc struct {
+	m_boxP0               []float32
+	m_boxP1               []float32
+	m_boxDistanceTravel   []float32
+	m_threadNumber        int
+	m_faceCount           int
+	m_vertexStrideInBytes int
+	m_skinThickness       float32
+	m_userData            *interface{}
+	m_objBody             *Body
+	m_polySoupBody        *Body
+	m_objCollision        *Collision
+	m_polySoupCollision   *Collision
+	m_vertex              []float32
+	m_faceIndexCount      *int
+	m_faceVertexIndex     *int
+}
+
+type MeshCollisionCollideHandler func(collideDescData *MeshCollisionCollideDesc)
+
+var gMeshCollisionCollide MeshCollisionCollideHandler
+
+//export goMeshCollisionCollideCB
+func goMeshCollisionCollideCB(collideDescData *C.NewtonUserMeshCollisionCollideDesc) {
+	//goCollideDescData := &MeshCollisionCollideDesc{
+
+	//}
+	//gMeshCollisionCollide(
+}
