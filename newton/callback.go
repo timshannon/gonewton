@@ -34,12 +34,11 @@ func (w *World) SetPerformanceClock(f GetTicksCountHandler) {
 
 type BodyLeaveWorldHandler func(body *Body, threadIndex int)
 
-var bodyLeaveWorld BodyLeaveWorldHandler
-
 //export goBodyLeaveWorldCB
 func goBodyLeaveWorldCB(body *C.NewtonBody, threadIndex C.int) {
-	gBody := &Body{body}
-	bodyLeaveWorld(gBody, int(threadIndex))
+	w := worldFromBodyPointer(body)
+	gBody := w.bodyFromPointer(body)
+	w.bodyLeaveWorld(gBody, int(threadIndex))
 }
 
 func (w *World) SetBodyLeaveWorldEvent(f BodyLeaveWorldHandler) {

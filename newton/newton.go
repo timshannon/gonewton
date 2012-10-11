@@ -36,19 +36,18 @@ type World struct {
 	handle *C.NewtonWorld
 	bodies map[uintptr]*Body
 	//materials map[uintptr]*Material
-	UserData interface{}
+	UserData       interface{}
+	bodyLeaveWorld BodyLeaveWorldHandler
 }
 
 type Body struct {
 	handle   *C.NewtonBody
 	joints   map[uintptr]*Joint
-	parent   *World
 	UserData interface{}
 }
 
 type Joint struct {
 	handle   *C.NewtonJoint
-	parent   *Body
 	UserData interface{}
 }
 
@@ -69,11 +68,15 @@ func CreateWorld() *World {
 }
 
 func worldFromPointer(pointer *C.NewtonWorld) *World {
-	return worlds[unsafe.Pointer(uintptr(pointer))]
+	return worlds[uintptr(unsafe.Pointer(pointer))]
 }
 
 func (w *World) bodyFromPointer(pointer *C.NewtonBody) *Body {
-	return w.bodies[unsafe.Pointer(uintptr(pointer))]
+	return w.bodies[uintptr(unsafe.Pointer(pointer))]
+}
+
+func worldFromBodyPointer(pointer *C.NewtonBody) *World {
+	return worlds[uintptr(unsafe.Pointer(C.NewtonBodyGetWorld(pointer)))]
 }
 
 //func (w *World) materialFromPointer(pointer *C.NewtonMaterial) *Material {
@@ -81,12 +84,13 @@ func (w *World) bodyFromPointer(pointer *C.NewtonBody) *Body {
 //}
 
 func (b *Body) jointFromPointer(pointer *C.NewtonJoint) *Joint {
-	return b.joints[unsafe.Pointer(uintptr(pointer))]
+	return b.joints[uintptr(unsafe.Pointer(pointer))]
 }
 
 func (w *World) Destroy() {
 	C.NewtonDestroy(w.handle)
-	w.bodies = make(map[uintptr]*Body)
+	delete(worlds, uintptr(unsafe.Pointer(w.handle)))
+	w.handle = nil
 }
 func (w *World) DestroyAllBodies() {
 	C.NewtonDestroyAllBodies(w.handle)
