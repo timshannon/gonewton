@@ -12,6 +12,7 @@ import "C"
 
 type Material struct {
 	handle *C.NewtonMaterial
+	//parent *World
 }
 
 func (w *World) CreateMaterialGroupID() int {
@@ -57,10 +58,6 @@ func (w *World) FirstMaterial() *Material {
 
 func (w *World) NextMaterial(material *Material) *Material {
 	return &Material{C.NewtonWorldGetNextMaterial(w.handle, material.handle)}
-}
-
-func (m *Material) UserData() *interface{} {
-	return (*interface{})(C.NewtonMaterialGetMaterialPairUserData(m.handle))
 }
 
 func (m *Material) ContactFaceAttribute() uint {

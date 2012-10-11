@@ -77,13 +77,12 @@ func (c *Collision) IsTriggerVolume() bool {
 }
 
 func (c *Collision) SetIsTriggerVolume(value bool) {
-	C.NewtonCollisionSetAsTriggerVolume(c.handle, Int[value])
+	C.NewtonCollisionSetAsTriggerVolume(c.handle, Cint[value])
 }
 
-//May implement later
-//func (c *Collision) FaceIndices(face int, faceIndices []int) int {
-//	return int(C.NewtonConvexHullGetFaceIndices(c.handle, C.int(face), (*C.int)(&faceIndices[0])))
-//}
+func (c *Collision) FaceIndices(face int, faceIndices []int) int {
+	return int(C.NewtonConvexHullGetFaceIndices(c.handle, C.int(face), (*C.int)(&faceIndices[0])))
+}
 
 func (c *Collision) CalculateVolume() float32 {
 	return float32(C.NewtonConvexCollisionCalculateVolume(c.handle))

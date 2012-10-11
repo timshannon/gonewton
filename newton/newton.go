@@ -21,31 +21,40 @@ const (
 // will solely be used for keeping track of the go object pointer
 // A Go only empty interface will be used to hold the user's go data
 // To an end user of this library, it shouldn't matter and be seemless
-// The golang objects need to be kept in a global map so that the GC
-// doesn't relaim them.
+// The golang objects need to be kept in stores on thei respective objects
+// So the GC will handle them properly.  For instance when a world gets
+// reclaimed, it'll reclaim the last of the pointers to it's sub bodies
 
-var nObjects map[uintptr]interface{}
+var worlds map[uintptr]*World
 
 //used for bools from c interfaces 
 // I'm sure there's a better way to do this, but this works for now
 var Bool = map[int]bool{0: false, 1: true}
-var Int = map[bool]C.int{false: C.int(0), true: C.int(1)}
+var Cint = map[bool]C.int{false: C.int(0), true: C.int(1)}
 
 type World struct {
 	handle *C.NewtonWorld
-	//UserData interface{}
+	bodies map[uintptr]*Body
+	//materials map[uintptr]*Material
+	UserData interface{}
 }
 
 type Body struct {
-	handle *C.NewtonBody
-	//UserData interface{}
+	handle   *C.NewtonBody
+	joints   map[uintptr]*Joint
+	parent   *World
+	UserData interface{}
 }
 
 type Joint struct {
-	handle *C.NewtonJoint
-	//UserData interface{}
+	handle   *C.NewtonJoint
+	parent   *Body
+	UserData interface{}
 }
 
+func init() {
+	worlds = make(map[uintptr]*World)
+}
 func Version() int    { return int(C.NewtonWorldGetVersion()) }
 func MemoryUsed() int { return int(C.NewtonGetMemoryUsed()) }
 
@@ -53,14 +62,37 @@ func CreateWorld() *World {
 	world := new(World)
 	world.handle = C.NewtonCreate()
 
-	nObjects[uintptr(unsafe.Pointer(world))] = world
+	worlds[uintptr(unsafe.Pointer(world))] = world
+	w.bodies = make(map[uintptr]*Body)
 
 	return world
 }
 
-func (w *World) Destroy()          { C.NewtonDestroy(w.handle) }
-func (w *World) DestroyAllBodies() { C.NewtonDestroyAllBodies(w.handle) }
-func (w *World) InvalidateCache()  { C.NewtonInvalidateCache(w.handle) }
+func worldFromPointer(pointer *C.NewtonWorld) *World {
+	return worlds[unsafe.Pointer(uintptr(pointer))]
+}
+
+func (w *World) bodyFromPointer(pointer *C.NewtonBody) *Body {
+	return w.bodies[unsafe.Pointer(uintptr(pointer))]
+}
+
+//func (w *World) materialFromPointer(pointer *C.NewtonMaterial) *Material {
+//	return w.bodies[unsafe.Pointer(uintptr(pointer))]
+//}
+
+func (b *Body) jointFromPointer(pointer *C.NewtonJoint) *Joint {
+	return b.joints[unsafe.Pointer(uintptr(pointer))]
+}
+
+func (w *World) Destroy() {
+	C.NewtonDestroy(w.handle)
+	w.bodies = make(map[uintptr]*Body)
+}
+func (w *World) DestroyAllBodies() {
+	C.NewtonDestroyAllBodies(w.handle)
+	w.bodies = make(map[uintptr]*Body)
+}
+func (w *World) InvalidateCache() { C.NewtonInvalidateCache(w.handle) }
 
 //SetSolverModel sets the solver model for the world
 // 0 is default with perfect accuracy
@@ -110,9 +142,9 @@ func (w *World) ConstraintCount() int {
 }
 
 func (w *World) FirstBody() *Body {
-	return &Body{C.NewtonWorldGetFirstBody(w.handle)}
+	return w.bodyFromPointer(C.NewtonWorldGetFirstBody(w.handle))
 }
 
 func (w *World) NextBody(curBody *Body) *Body {
-	return &Body{C.NewtonWorldGetNextBody(w.handle, curBody.handle)}
+	return w.bodyFromPointer(C.NewtonWorldGetNextBody(w.handle, curBody.handle))
 }
