@@ -14,9 +14,14 @@ import (
 	"unsafe"
 )
 
-//To simplify the interface and to work around some limitations with cgo based
-// callbacks, there will only be one global instance of each callback type
-// even though the library could support more.
+//A note on callbacks.  Since C callbacks must basically
+// be hardcoded to one function, I have to do a look up
+// in the function to the proper function pointer based on
+// the limited data in that callback.  In order to do this
+// I have to track all of the pointers added globally and make
+// sure they are cleaned up as well.  It's a little convoluted
+// As soon as we can pass a func pointer directly, half of this 
+// can go away.
 
 type GetTicksCountHandler func() uint
 
@@ -36,82 +41,68 @@ type BodyLeaveWorldHandler func(body *Body, threadIndex int)
 
 //export goBodyLeaveWorldCB
 func goBodyLeaveWorldCB(body *C.NewtonBody, threadIndex C.int) {
-	w := worldFromBodyPointer(body)
-	gBody := w.bodyFromPointer(body)
-	w.bodyLeaveWorld(gBody, int(threadIndex))
+	b := globalPtr.get(unsafe.Pointer(body)).(*Body)
+	b.world.bodyLeaveWorld(b, int(threadIndex))
 }
 
 func (w *World) SetBodyLeaveWorldEvent(f BodyLeaveWorldHandler) {
-	bodyLeaveWorld = f
+	w.bodyLeaveWorld = f
 	C.setBodyLeaveWorldCB(w.handle)
 }
 
-type JointIteratorHandler func(joint *Joint, userData *interface{})
-
-var jointIterator JointIteratorHandler
+type JointIteratorHandler func(joint *Joint, userData interface{})
 
 //export goJointIteratorCB
 func goJointIteratorCB(joint *C.NewtonJoint, userData unsafe.Pointer) {
-	gJoint := &Joint{joint}
-	jointIterator(gJoint, (*interface{})(userData))
+	j := globalPtr.get(unsafe.Pointer(joint)).(*Joint)
+
+	j.body0.world.jointIterator(j, (interface{})(userData))
 }
 
-func (w *World) ForEachJointDo(f JointIteratorHandler, userData *interface{}) {
-	jointIterator = f
-	C.setJointIteratorCB(w.handle, unsafe.Pointer(userData))
+func (w *World) ForEachJointDo(f JointIteratorHandler, userData interface{}) {
+	w.jointIterator = f
+	C.setJointIteratorCB(w.handle, unsafe.Pointer(&userData))
 }
 
-type BodyIteratorHandler func(body *Body, userData *interface{})
-
-var bodyIterator BodyIteratorHandler
+type BodyIteratorHandler func(body *Body, userData interface{})
 
 //export goBodyIteratorCB
 func goBodyIteratorCB(body *C.NewtonBody, userData unsafe.Pointer) {
-	gBody := &Body{body}
-	bodyIterator(gBody, (*interface{})(userData))
+	b := globalPtr.get(unsafe.Pointer(body)).(*Body)
+	b.world.bodyIterator(b, (interface{})(userData))
 }
 
-func (w *World) ForEachBodyInAABBDo(p0, p1 []float32, f BodyIteratorHandler,
-	userData *interface{}) {
-	bodyIterator = f
-	C.setBodyIteratorCB(w.handle, (*C.dFloat)(&p0[0]), (*C.dFloat)(&p1[0]), unsafe.Pointer(userData))
+func (w *World) ForEachBodyInAABBDo(p0, p1 []float32, f BodyIteratorHandler, userData interface{}) {
+	w.bodyIterator = f
+	C.setBodyIteratorCB(w.handle, (*C.dFloat)(&p0[0]), (*C.dFloat)(&p1[0]), unsafe.Pointer(&userData))
 }
 
 type RayFilterHandler func(body *Body, hitNormal []float32, collisionID int,
-	userData *interface{}, intersectParam float32) float32
-
-var rayFilter RayFilterHandler
+	userData interface{}, intersectParam float32) float32
 
 //export goRayFilterCB
 func goRayFilterCB(body *C.NewtonBody, hitNormal *C.dFloat, collisionID C.int,
 	userData unsafe.Pointer, intersectParam C.dFloat) C.dFloat {
-	gBody := &Body{body}
+	b := globalPtr.get(unsafe.Pointer(body)).(*Body)
 
-	return C.dFloat(rayFilter(gBody, goFloats(hitNormal, 3), int(collisionID),
-		(*interface{})(userData), float32(intersectParam)))
+	return C.dFloat(b.world.rayFilter(b, goFloats(hitNormal, 3), int(collisionID),
+		(interface{})(userData), float32(intersectParam)))
 }
 
-type RayPrefilterHandler func(body *Body, collision *Collision, userData *interface{}) uint
-
-var rayPrefilter RayPrefilterHandler
+type RayPrefilterHandler func(body *Body, collision *Collision, userData interface{}) uint
 
 //export goRayPrefilterCB
 func goRayPrefilterCB(body *C.NewtonBody, collision *C.NewtonCollision, userData unsafe.Pointer) C.unsigned {
-	gBody := &Body{body}
+	b := globalPtr.get(unsafe.Pointer(body)).(*Body)
 	gCollision := &Collision{collision}
-	return C.unsigned(rayPrefilter(gBody, gCollision, (*interface{})(userData)))
+	return C.unsigned(b.world.rayPrefilter(b, gCollision, (interface{})(userData)))
 }
 
-func SetRayFilterHandler(f RayFilterHandler) {
-	rayFilter = f
-}
-
-func SetRayPrefilterHandler(f RayPrefilterHandler) {
-	rayPrefilter = f
-}
-
-func (w *World) RayCast(p0 []float32, p1 []float32, userData *interface{}) {
-	C.RayCast(w.handle, (*C.dFloat)(&p0[0]), (*C.dFloat)(&p1[0]), unsafe.Pointer(userData))
+func (w *World) RayCast(p0 []float32, p1 []float32, filter RayFilterHandler, userData interface{},
+	prefilter RayPrefilterHandler) {
+	w.rayFilter = filter
+	w.rayPrefilter = prefilter
+	C.RayCast(w.handle, (*C.dFloat)(&p0[0]), (*C.dFloat)(&p1[0]), unsafe.Pointer(&userData))
 }
 
 //goFloats creates a float32 slice of the given size of the passed in c array pointer
@@ -132,9 +123,11 @@ type ConvexCastReturnInfo struct {
 	HitBody          *Body
 }
 
+//TODO: Missing collide cast
 func (w *World) ConvexCast(matrix []float32, target []float32, shape *Collision, hitParam *float32,
-	userData *interface{}, maxContactsCount int, threadIndex int) []*ConvexCastReturnInfo {
+	userData *interface{}, prefilter RayPrefilterHandler, maxContactsCount int, threadIndex int) []*ConvexCastReturnInfo {
 
+	w.rayPrefilter = prefilter
 	var size int
 	cInfo := make([]C.NewtonWorldConvexCastReturnInfo, maxContactsCount)
 	size = int(C.ConvexCast(w.handle, (*C.dFloat)(&matrix[0]), (*C.dFloat)(&target[0]), shape.handle,
@@ -149,7 +142,7 @@ func (w *World) ConvexCast(matrix []float32, target []float32, shape *Collision,
 			NormalOnHitPoint: goFloats(&cInfo[i].m_normalOnHitPoint[0], 4),
 			Penetration:      float32(cInfo[i].m_penetration),
 			ContactID:        int(cInfo[i].m_contactID),
-			HitBody:          &Body{cInfo[i].m_hitBody},
+			HitBody:          globalPtr.get(unsafe.Pointer(cInfo[i].m_hitBody)).(*Body),
 		}
 
 	}
@@ -159,32 +152,28 @@ func (w *World) ConvexCast(matrix []float32, target []float32, shape *Collision,
 
 type OnAABBOverlapHandler func(material *Material, body0, body1 *Body, threadIndex int) int
 
-var gOnAABBOverlap OnAABBOverlapHandler
-
 //export goOnAABBOverlapCB
 func goOnAABBOverlapCB(material *C.NewtonMaterial, body0, body1 *C.NewtonBody, threadIndex C.int) C.int {
 	gMaterial := &Material{material}
-	gBody0 := &Body{body0}
-	gBody1 := &Body{body1}
+	b0 := globalPtr.get(unsafe.Pointer(body0)).(*Body)
+	b1 := globalPtr.get(unsafe.Pointer(body1)).(*Body)
 
-	return C.int(gOnAABBOverlap(gMaterial, gBody0, gBody1, int(threadIndex)))
+	return C.int(b0.world.onAABBOverlap(gMaterial, b0, b1, int(threadIndex)))
 }
 
 type ContactsProcessHandler func(contact *Joint, timestep float32, threadIndex int)
 
-var gContactsProcess ContactsProcessHandler
-
 //export goContactsProcessCB
 func goContactsProcessCB(contact *C.NewtonJoint, timestep C.dFloat, threadIndex C.int) {
-	gJoint := &Joint{contact}
-	gContactsProcess(gJoint, float32(timestep), int(threadIndex))
+	j := globalPtr.get(unsafe.Pointer(contact)).(*Joint)
+	j.body0.world.contactsProcess(j, float32(timestep), int(threadIndex))
 }
 
-func (w *World) SetMaterialCollisionCallback(matid0, matid1 int, userData *interface{},
+func (w *World) SetMaterialCollisionCallback(matid0, matid1 int, userData interface{},
 	onAABBOverlap OnAABBOverlapHandler, contactsProcess ContactsProcessHandler) {
-	gOnAABBOverlap = onAABBOverlap
-	gContactsProcess = contactsProcess
-	C.SetCollisionCB(w.handle, C.int(matid0), C.int(matid1), unsafe.Pointer(userData))
+	w.onAABBOverlap = onAABBOverlap
+	w.contactsProcess = contactsProcess
+	C.SetCollisionCB(w.handle, C.int(matid0), C.int(matid1), unsafe.Pointer(&userData))
 }
 
 type MeshCollisionCollideDesc struct {
@@ -195,7 +184,7 @@ type MeshCollisionCollideDesc struct {
 	m_faceCount           int
 	m_vertexStrideInBytes int
 	m_skinThickness       float32
-	m_userData            *interface{}
+	m_userData            interface{}
 	m_objBody             *Body
 	m_polySoupBody        *Body
 	m_objCollision        *Collision
@@ -206,8 +195,6 @@ type MeshCollisionCollideDesc struct {
 }
 
 type MeshCollisionCollideHandler func(collideDescData *MeshCollisionCollideDesc)
-
-var gMeshCollisionCollide MeshCollisionCollideHandler
 
 //export goMeshCollisionCollideCB
 func goMeshCollisionCollideCB(collideDescData *C.NewtonUserMeshCollisionCollideDesc) {
