@@ -73,16 +73,16 @@ func (w *World) CreateConvexHullFromMesh(mesh *Mesh, tolerance float32, shapeID 
 // Primitive typed methods
 
 func (c *Collision) IsTriggerVolume() bool {
-	return Bool[int(C.NewtonCollisionIsTriggerVolume(c.handle))]
+	return gbool[int(C.NewtonCollisionIsTriggerVolume(c.handle))]
 }
 
 func (c *Collision) SetIsTriggerVolume(value bool) {
-	C.NewtonCollisionSetAsTriggerVolume(c.handle, Cint[value])
+	C.NewtonCollisionSetAsTriggerVolume(c.handle, cint[value])
 }
 
-func (c *Collision) FaceIndices(face int, faceIndices []int) int {
-	return int(C.NewtonConvexHullGetFaceIndices(c.handle, C.int(face), (*C.int)(&faceIndices[0])))
-}
+//func (c *Collision) FaceIndices(face int, faceIndices []int) int {
+//	return int(C.NewtonConvexHullGetFaceIndices(c.handle, C.int(face), (*C.int)(&faceIndices[0])))
+//}
 
 func (c *Collision) CalculateVolume() float32 {
 	return float32(C.NewtonConvexCollisionCalculateVolume(c.handle))
@@ -97,6 +97,7 @@ type Node struct {
 	handle unsafe.Pointer
 }
 
+//TODO: Remove, breaks adding new bodies
 type CompoundCollision struct {
 	Collision
 }
