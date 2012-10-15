@@ -51,14 +51,14 @@ type World struct {
 	UserData interface{}
 
 	//world unique callbacks
-	bodyLeaveWorld       BodyLeaveWorldHandler
-	jointIterator        JointIteratorHandler
-	bodyIterator         BodyIteratorHandler
-	rayFilter            RayFilterHandler
-	rayPrefilter         RayPrefilterHandler
-	onAABBOverlap        OnAABBOverlapHandler
-	contactsProcess      ContactsProcessHandler
-	meshCollisionCollide MeshCollisionCollideHandler
+	bodyLeaveWorld  BodyLeaveWorldHandler
+	jointIterator   JointIteratorHandler
+	bodyIterator    BodyIteratorHandler
+	rayFilter       RayFilterHandler
+	rayPrefilter    RayPrefilterHandler
+	onAABBOverlap   OnAABBOverlapHandler
+	contactsProcess ContactsProcessHandler
+	//meshCollisionCollide MeshCollisionCollideHandler
 }
 
 func (w *World) ptr() unsafe.Pointer {

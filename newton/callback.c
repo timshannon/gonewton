@@ -43,5 +43,5 @@ void SetCollisionCB(NewtonWorld* world, int id0, int id1, void* userData) {
 void CopyFloatArray(dFloat* src, dFloat* dest, int len) {
 	int i;
 	for(i = 0; i < len; i++) 
-		*(dest+i) = *(src+i);
+		dest[i] = src[i];
 }

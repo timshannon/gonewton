@@ -9,7 +9,15 @@ import "C"
 import "unsafe"
 
 type Collision struct {
-	handle *C.NewtonCollision
+	handle   *C.NewtonCollision
+	UserData interface{}
+}
+
+//collisions are instances in newton, so the  pointer on the Go side
+// may not be the same object on the newton side.  Instead the go pointer
+// will be stored in the collsion user data.
+func (c *Collision) ptr() unsafe.Pointer {
+	return C.NewtonCollisionGetUserData(c.handle)
 }
 
 type Mesh struct {
@@ -17,6 +25,7 @@ type Mesh struct {
 }
 
 // *** Primitive Creation Methods
+//TODO: Set NewtonUserData on create to point to Go Pointer
 func (w *World) CreateNull() *Collision { return &Collision{C.NewtonCreateNull(w.handle)} }
 func (w *World) CreateSphere(radius float32, shapeID int, offsetMatrix []float32) *Collision {
 	return &Collision{C.NewtonCreateSphere(w.handle, C.dFloat(radius), C.int(shapeID),
@@ -97,103 +106,104 @@ type Node struct {
 	handle unsafe.Pointer
 }
 
-//TODO: Remove, breaks adding new bodies
-type CompoundCollision struct {
-	Collision
-}
-
 //Compound Collisions
-func (w *World) CreateCompoundCollision(shapeID int) *CompoundCollision {
-	return &CompoundCollision{Collision{C.NewtonCreateCompoundCollision(w.handle, C.int(shapeID))}}
+func (w *World) CreateCompoundCollision(shapeID int) *Collision {
+	return &Collision{C.NewtonCreateCompoundCollision(w.handle, C.int(shapeID))}
 }
 
 func (w *World) CreateCompoundCollisionFromMesh(mesh *Mesh, hullTolerance float32, shapeID,
-	subShapeID int) *CompoundCollision {
-	return &CompoundCollision{Collision{C.NewtonCreateCompoundCollisionFromMesh(w.handle, mesh.handle,
-		C.dFloat(hullTolerance), C.int(shapeID), C.int(subShapeID))}}
+	subShapeID int) *Collision {
+	return &Collision{C.NewtonCreateCompoundCollisionFromMesh(w.handle, mesh.handle,
+		C.dFloat(hullTolerance), C.int(shapeID), C.int(subShapeID))}
 }
 
-func (c *CompoundCollision) BeginAddRemove() {
+func (c *Collision) CompoundBeginAddRemove() {
 	C.NewtonCompoundCollisionBeginAddRemove(c.handle)
 }
 
-func (c *CompoundCollision) EndAddRemove() {
+func (c *Collision) CompoundEndAddRemove() {
 	C.NewtonCompoundCollisionEndAddRemove(c.handle)
 }
 
-func (c *CompoundCollision) AddSubCollision(subCollision *Collision) *Node {
+func (c *Collision) CompoundAddSubCollision(subCollision *Collision) *Node {
 	return &Node{C.NewtonCompoundCollisionAddSubCollision(c.handle, subCollision.handle)}
 }
 
-func (c *CompoundCollision) RemoveSubCollision(collisionNode *Node) {
+func (c *Collision) CompoundRemoveSubCollision(collisionNode *Node) {
 	C.NewtonCompoundCollisionRemoveSubCollision(c.handle, collisionNode.handle)
 }
 
-func (c *CompoundCollision) RemoveSubCollisionByIndex(index int) {
+func (c *Collision) CompoundRemoveSubCollisionByIndex(index int) {
 	C.NewtonCompoundCollisionRemoveSubCollisionByIndex(c.handle, C.int(index))
 }
 
-func (c *CompoundCollision) SetSubCollisionMatrix(collisionNode *Node, matrix []float32) {
+func (c *Collision) SetSubCollisionMatrix(collisionNode *Node, matrix []float32) {
 	C.NewtonCompoundCollisionSetSubCollisionMatrix(c.handle, collisionNode.handle,
 		(*C.dFloat)(&matrix[0]))
 }
 
-func (c *CompoundCollision) FirstNode() *Node {
+func (c *Collision) CompoundFirstNode() *Node {
 	return &Node{C.NewtonCompoundCollisionGetFirstNode(c.handle)}
 }
 
-func (c *CompoundCollision) NextNode(curNode *Node) *Node {
+func (c *Collision) CompoundNextNode(curNode *Node) *Node {
 	return &Node{C.NewtonCompoundCollisionGetNextNode(c.handle, curNode.handle)}
 }
 
-func (c *CompoundCollision) NodeByIndex(index int) *Node {
+func (c *Collision) CompoundNodeByIndex(index int) *Node {
 	return &Node{C.NewtonCompoundCollisionGetNodeByIndex(c.handle,
 		C.int(index))}
 }
 
-func (c *CompoundCollision) NodeIndex(node *Node) int {
+func (c *Collision) CompoundNodeIndex(node *Node) int {
 	return int(C.NewtonCompoundCollisionGetNodeIndex(c.handle,
 		node.handle))
 }
 
-func (parent *CompoundCollision) CollisionFromNode(node *Node) *Collision {
+func (parent *Collision) CompoundCollisionFromNode(node *Node) *Collision {
 	return &Collision{C.NewtonCompoundCollisionGetCollisionFromNode(parent.handle, node.handle)}
 }
 
 //SceneCollision
-type SceneCollision struct {
-	Collision
+
+func (w *World) CreateSceneCollision(shapeID int) *Collision {
+	return &Collision{C.NewtonCreateSceneCollision(w.handle, C.int(shapeID))}
 }
 
-func (w *World) CreateSceneCollision(shapeID int) *SceneCollision {
-	return &SceneCollision{Collision{C.NewtonCreateSceneCollision(w.handle, C.int(shapeID))}}
-}
-
-func (c *SceneCollision) BeginAddRemove() {
+func (c *Collision) SceneBeginAddRemove() {
 	C.NewtonSceneCollisionBeginAddRemove(c.handle)
 }
 
-func (c *SceneCollision) EndAddRemove() {
+func (c *Collision) SceneEndAddRemove() {
 	C.NewtonSceneCollisionEndAddRemove(c.handle)
 }
 
-func (c *SceneCollision) AddSubCollision(subCollision *Collision) *Node {
+func (c *Collision) SceneAddSubCollision(subCollision *Collision) *Node {
 	return &Node{C.NewtonSceneCollisionAddSubCollision(c.handle, subCollision.handle)}
 }
 
-func (c *SceneCollision) SetSubCollisionMatrix(collisionNode *Node, matrix []float32) {
+func (c *Collision) SceneSetSubCollisionMatrix(collisionNode *Node, matrix []float32) {
 	C.NewtonSceneCollisionSetSubCollisionMatrix(c.handle, collisionNode.handle,
 		(*C.dFloat)(&matrix[0]))
 }
 
-func (c *SceneCollision) FirstNode() *Node {
+func (c *Collision) SceneFirstNode() *Node {
 	return &Node{C.NewtonSceneCollisionGetFirstNode(c.handle)}
 }
 
-func (c *SceneCollision) NextNode(curNode *Node) *Node {
+func (c *Collision) SceneNextNode(curNode *Node) *Node {
 	return &Node{C.NewtonSceneCollisionGetNextNode(c.handle, curNode.handle)}
 }
 
-func (parent *SceneCollision) CollisionFromNode(node *Node) *Collision {
+func (parent *Collision) SceneCollisionFromNode(node *Node) *Collision {
 	return &Collision{C.NewtonSceneCollisionGetCollisionFromNode(parent.handle, node.handle)}
+}
+
+//TreeCollision
+func (w *World) CreateTreeCollision(shapeID int) *Collision {
+	return &Collision{C.NewtonCreateTreeCollision(w.handle, C.int(shapeID))}
+}
+
+func (w *World) CreateTreeCollsionFromMesh(mesh *Mesh, shapeID int) *Collision {
+	return &Collision{C.NewtonCreateTreeCollisionFromMesh(w.handle, mesh.handle, C.int(shapeID))}
 }

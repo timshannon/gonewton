@@ -123,12 +123,15 @@ type ConvexCastReturnInfo struct {
 	HitBody          *Body
 }
 
-//TODO: Missing collide cast
+// NewtonWorldCollide: obsolete
+
 func (w *World) ConvexCast(matrix []float32, target []float32, shape *Collision, hitParam *float32,
 	userData *interface{}, prefilter RayPrefilterHandler, maxContactsCount int, threadIndex int) []*ConvexCastReturnInfo {
 
 	w.rayPrefilter = prefilter
 	var size int
+	//all of this allocation may be a performance issue
+	// might have to reapproach this
 	cInfo := make([]C.NewtonWorldConvexCastReturnInfo, maxContactsCount)
 	size = int(C.ConvexCast(w.handle, (*C.dFloat)(&matrix[0]), (*C.dFloat)(&target[0]), shape.handle,
 		(*C.dFloat)(hitParam), unsafe.Pointer(userData), &cInfo[0], C.int(maxContactsCount),
@@ -194,12 +197,20 @@ type MeshCollisionCollideDesc struct {
 	m_faceVertexIndex     *int
 }
 
-type MeshCollisionCollideHandler func(collideDescData *MeshCollisionCollideDesc)
+//Skip user mesh for now
+//If implemented...
+//Separate New user Mesh creation from some callbacks, so that if a user doesn't want to use
+// the callbacks, they aren't tied to the very expensive conversions that would be
+// tied to the global go callbacks
+
+//type MeshCollisionCollideHandler func(collideDescData *MeshCollisionCollideDesc)
 
 //export goMeshCollisionCollideCB
-func goMeshCollisionCollideCB(collideDescData *C.NewtonUserMeshCollisionCollideDesc) {
-	//goCollideDescData := &MeshCollisionCollideDesc{
+//func goMeshCollisionCollideCB(collideDescData *C.NewtonUserMeshCollisionCollideDesc) {
+//goCollideDescData := &MeshCollisionCollideDesc{
 
-	//}
-	//gMeshCollisionCollide(
-}
+//}
+//gMeshCollisionCollide(
+//}
+
+//Skip heightfields for now
