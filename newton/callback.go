@@ -94,7 +94,7 @@ type RayPrefilterHandler func(body *Body, collision *Collision, userData interfa
 //export goRayPrefilterCB
 func goRayPrefilterCB(body *C.NewtonBody, collision *C.NewtonCollision, userData unsafe.Pointer) C.unsigned {
 	b := globalPtr.get(unsafe.Pointer(body)).(*Body)
-	gCollision := &Collision{collision}
+	gCollision := &Collision{handle: collision}
 	return C.unsigned(b.world.rayPrefilter(b, gCollision, (interface{})(userData)))
 }
 
@@ -214,3 +214,16 @@ type MeshCollisionCollideDesc struct {
 //}
 
 //Skip heightfields for now
+
+type CollisionTreeRayCastCallback func(body *Body, treeCollision *Collision, interception float32,
+	normal []float32, faceId int, userData interface{}) float32
+
+//export goCollisionTreeRayCastCallback
+func goCollisionTreeRayCastCallback(body *C.NewtonBody, treeCollision *C.NewtonCollision, interception C.dFloat,
+	normal *C.dFloat, faceId C.int, userData unsafe.Pointer) C.dFloat {
+	b := globalPtr.get(unsafe.Pointer(body)).(*Body)
+	col := globalPtr.get(unsafe.Pointer(treeCollision)).(*Collision)
+
+	return C.dFloat(col.raycastCallback(b, col, float32(interception), goFloats(normal, 3),
+		int(faceId), (interface{})(userData)))
+}

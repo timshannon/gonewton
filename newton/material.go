@@ -65,7 +65,7 @@ func (m *Material) ContactFaceAttribute() uint {
 }
 
 func (m *Material) BodyCollidingShape(body *Body) *Collision {
-	collision := &Collision{C.NewtonMaterialGetBodyCollidingShape(m.handle, body.handle)}
+	collision := &Collision{handle: C.NewtonMaterialGetBodyCollidingShape(m.handle, body.handle)}
 	return collision
 }
 
