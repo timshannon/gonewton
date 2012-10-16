@@ -21,6 +21,8 @@ extern dFloat goCollisionTreeRayCastCallback(NewtonBody*,NewtonCollision*, dFloa
 	dFloat*, int, void*);
 extern void goTreeCollisionCallback(NewtonBody*, NewtonBody*, int, int,
 	dFloat*, int);
+extern void goBodyDestructor(NewtonBody*); 
+
 
 void setGetTicksCountCB(NewtonWorld*);
 void setBodyLeaveWorldCB(NewtonWorld*);
@@ -32,6 +34,7 @@ int ConvexCast(NewtonWorld*, dFloat*, dFloat*, NewtonCollision*, dFloat*, void*,
 void SetCollisionCB(NewtonWorld*, int, int, void*);
 void SetUserRayCastCallback(NewtonCollision*);
 void SetStaticCollisionDebugCallback(NewtonCollision*);
+void SetBodyDestructor(NewtonBody*); 
 
 
 

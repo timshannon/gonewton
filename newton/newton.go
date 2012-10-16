@@ -11,12 +11,6 @@ package newton
 import "C"
 import "unsafe"
 
-const (
-	DynamicBody = iota
-	KinematicBody
-	DeformableBody
-)
-
 //global objects that need to hang around so the callback pointers
 // don't get cleaned up by the GC.
 // This interface and type assist in managing the translation from
@@ -65,24 +59,6 @@ func (w *World) ptr() unsafe.Pointer {
 	return unsafe.Pointer(w.handle)
 }
 
-type Body struct {
-	handle   *C.NewtonBody
-	world    *World
-	joints   []*Joint
-	UserData interface{}
-}
-
-func (b *Body) ptr() unsafe.Pointer { return unsafe.Pointer(b.handle) }
-
-type Joint struct {
-	handle   *C.NewtonJoint
-	body0    *Body
-	body1    *Body
-	UserData interface{}
-}
-
-func (j *Joint) ptr() unsafe.Pointer { return unsafe.Pointer(j.handle) }
-
 func init() {
 	globalPtr = make(ptrManager)
 }
@@ -106,12 +82,6 @@ func (w *World) deleteBodyPointers() {
 	}
 }
 
-func (b *Body) deleteJointPointers() {
-	for i := range b.joints {
-		globalPtr.remove(b.joints[i])
-	}
-}
-
 func (w *World) Destroy() {
 	C.NewtonDestroy(w.handle)
 	w.deleteBodyPointers()
@@ -123,27 +93,6 @@ func (w *World) DestroyAllBodies() {
 	C.NewtonDestroyAllBodies(w.handle)
 	w.deleteBodyPointers()
 	w.bodies = []*Body{}
-}
-
-func (w *World) CreateDynamicBody(collision *Collision, matrix []float32) *Body {
-	body := new(Body)
-	body.world = w
-
-	body.handle = C.NewtonCreateDynamicBody(w.handle, collision.handle, (*C.dFloat)(&matrix[0]))
-
-	globalPtr.add(body)
-	return body
-}
-
-func (w *World) createGoJoint(cObject *C.NewtonJoint, body0, body1 *Body) *Joint {
-	joint := new(Joint)
-	joint.handle = cObject
-	joint.body0 = body0
-	joint.body1 = body1
-
-	globalPtr.add(joint)
-
-	return joint
 }
 
 func (w *World) InvalidateCache() { C.NewtonInvalidateCache(w.handle) }
@@ -211,4 +160,161 @@ func (w *World) NextBody(curBody *Body) *Body {
 func CalculateSpringDamperAcceleration(dt, ks, x, kd, s float32) float32 {
 	return float32(C.NewtonCalculateSpringDamperAcceleration(C.dFloat(dt), C.dFloat(ks), C.dFloat(x),
 		C.dFloat(kd), C.dFloat(s)))
+}
+
+//Bodies
+type Body struct {
+	handle   *C.NewtonBody
+	world    *World
+	joints   []*Joint
+	UserData interface{}
+
+	//callbacks
+	destructorCallback BodyDestructorCallback
+}
+
+const (
+	BodyDynamic = iota
+	BodyKinematic
+	BodyDeformable
+)
+
+func (b *Body) ptr() unsafe.Pointer { return unsafe.Pointer(b.handle) }
+
+func (b *Body) deleteJointPointers() {
+	for i := range b.joints {
+		globalPtr.remove(b.joints[i])
+	}
+}
+
+func (w *World) CreateDynamicBody(collision *Collision, matrix []float32) *Body {
+	body := new(Body)
+	body.world = w
+
+	body.handle = C.NewtonCreateDynamicBody(w.handle, collision.handle, (*C.dFloat)(&matrix[0]))
+
+	globalPtr.add(body)
+	return body
+}
+
+func (w *World) CreateKinematicBody(collision *Collision, matrix []float32) *Body {
+	body := new(Body)
+	body.world = w
+
+	body.handle = C.NewtonCreateKinematicBody(w.handle, collision.handle, (*C.dFloat)(&matrix[0]))
+
+	globalPtr.add(body)
+	return body
+}
+
+func (b *Body) Destroy() {
+	C.NewtonDestroyBody(b.world.handle, b.handle)
+	b.deleteJointPointers()
+	globalPtr.remove(b)
+	b.handle = nil
+}
+
+func (b *Body) Type() int {
+	return int(C.NewtonBodyGetType(b.handle))
+}
+
+func (b *Body) AddForce(force []float32) {
+	C.NewtonBodyAddForce(b.handle, (*C.dFloat)(&force[0]))
+}
+
+func (b *Body) AddTorque(torque []float32) {
+	C.NewtonBodyAddTorque(b.handle, (*C.dFloat)(&torque[0]))
+}
+
+func (b *Body) CalculateInverseDynamicsForce(timestep float32, desiredVeloc, forceOut []float32) {
+	C.NewtonBodyCalculateInverseDynamicsForce(b.handle, C.dFloat(timestep), (*C.dFloat)(&desiredVeloc[0]),
+		(*C.dFloat)(&forceOut[0]))
+}
+
+func (b *Body) SetCentreOfMass(relativeOffset []float32) {
+	C.NewtonBodySetCentreOfMass___(b.handle, (*C.dFloat)(&relativeOffset[0]))
+}
+
+func (b *Body) SetMassMatrix(mass, Ixx, Iyy, Izz float32) {
+	C.NewtonBodySetMassMatrix___(b.handle, C.dFloat(mass), C.dFloat(Ixx), C.dFloat(Iyy), C.dFloat(Izz))
+}
+
+func (b *Body) SetMassProperties(mass float32, collision *Collision) {
+	C.NewtonBodySetMassProperties(b.handle, C.dFloat(mass), collision.handle)
+}
+
+func (b *Body) SetMatrix(matrix []float32) {
+	C.NewtonBodySetMatrix(b.handle, (*C.dFloat)(&matrix[0]))
+}
+
+func (b *Body) SetMatrixRecursive(matrix []float32) {
+	C.NewtonBodySetMatrixRecursive(b.handle, (*C.dFloat)(&matrix[0]))
+}
+
+func (b *Body) SetMaterialGroupID(id int) {
+	C.NewtonBodySetMaterialGroupID(b.handle, C.int(id))
+}
+
+func (b *Body) SetContinuousCollisionMode(state uint) {
+	C.NewtonBodySetContinuousCollisionMode(b.handle, C.uint(state))
+}
+
+func (b *Body) SetJointRecursiveCollision(state uint) {
+	C.NewtonBodySetJointRecursiveCollision(b.handle, C.uint(state))
+}
+
+func (b *Body) SetOmega(omega []float32) {
+	C.NewtonBodySetOmega(b.handle, (*C.dFloat)(&omega[0]))
+}
+
+func (b *Body) SetVelocity(velocity []float32) {
+	C.NewtonBodySetVelocity(b.handle, (*C.dFloat)(&velocity[0]))
+}
+
+func (b *Body) SetForce(force []float32) {
+	C.NewtonBodySetForce(b.handle, (*C.dFloat)(&force[0]))
+}
+
+func (b *Body) SetTorque(torque []float32) {
+	C.NewtonBodySetTorque(b.handle, (*C.dFloat)(&torque[0]))
+}
+
+func (b *Body) SetLinearDamping(linearDamp float32) {
+	C.NewtonBodySetLinearDamping(b.handle, C.dFloat(linearDamp))
+}
+
+func (b *Body) SetAngularDamping(angularDamp []float32) {
+	C.NewtonBodySetAngularDamping(b.handle, (*C.dFloat)(&angularDamp[0]))
+}
+
+func (b *Body) SetCollision(collision *Collision) {
+	C.NewtonBodySetCollision(b.handle, collision.handle)
+}
+
+func (b *Body) SetCollisionScale(x, y, z float32) {
+	C.NewtonBodySetCollisionScale(b.handle, C.dFloat(x), C.dFloat(y), C.dFloat(z))
+}
+
+func (b *Body) SleepState() int {
+	return int(C.NewtonBodyGetSleepState(b.handle))
+}
+
+func (b *Body) SetSleepState(state int) {
+	C.NewtonBodySetSleepState(b.handle, C.int(state))
+}
+
+func (b *Body) AutoSleep() int {
+	return int(C.NewtonBodyGetAutoSleep(b.handle))
+}
+
+func (b *Body) SetAutoSleep(state int) {
+	C.NewtonBodySetAutoSleep(b.handle, C.int(state))
+}
+
+func (b *Body) FreezeState() int {
+	return int(C.NewtonBodyGetFreezeState(b.handle))
+}
+
+func (b *Body) SetFreezeState(state int) {
+	C.NewtonBodySetFreezeState(b.handle, C.int(state))
 }
