@@ -9,13 +9,17 @@ import "C"
 import "unsafe"
 
 type Collision struct {
-	handle   *C.NewtonCollision
-	UserData interface{}
+	handle          *C.NewtonCollision
+	UserData        interface{}
+	raycastCallback CollisionTreeRayCastCallback
 }
 
 //collisions are instances in newton, so the  pointer on the Go side
 // may not be the same object on the newton side.  Instead the go pointer
 // will be stored in the collsion user data.
+//  Note that this is only need for storing callbacks on collisions.
+// If a collision type doesn't have an associated callback, then we don't need to
+// retain the pointer.
 func (c *Collision) ptr() unsafe.Pointer {
 	return C.NewtonCollisionGetUserData(c.handle)
 }
@@ -25,58 +29,59 @@ type Mesh struct {
 }
 
 // *** Primitive Creation Methods
-//TODO: Set NewtonUserData on create to point to Go Pointer
-func (w *World) CreateNull() *Collision { return &Collision{C.NewtonCreateNull(w.handle)} }
+func (w *World) CreateNull() *Collision {
+	collision := &Collision{handle: C.NewtonCreateNull(w.handle)}
+	return collision
+}
 func (w *World) CreateSphere(radius float32, shapeID int, offsetMatrix []float32) *Collision {
-	return &Collision{C.NewtonCreateSphere(w.handle, C.dFloat(radius), C.int(shapeID),
+	return &Collision{handle: C.NewtonCreateSphere(w.handle, C.dFloat(radius), C.int(shapeID),
 		(*C.dFloat)(&offsetMatrix[0]))}
 }
 
 func (w *World) CreateBox(dx, dy, dz float32, shapeID int, offsetMatrix []float32) *Collision {
-	return &Collision{C.NewtonCreateBox(w.handle, C.dFloat(dx), C.dFloat(dy), C.dFloat(dz), C.int(shapeID),
+	return &Collision{handle: C.NewtonCreateBox(w.handle, C.dFloat(dx), C.dFloat(dy), C.dFloat(dz), C.int(shapeID),
 		(*C.dFloat)(&offsetMatrix[0]))}
 }
 
 func (w *World) CreateCone(radius, height float32, shapeID int, offsetMatrix []float32) *Collision {
-	return &Collision{C.NewtonCreateCone(w.handle, C.dFloat(radius), C.dFloat(height), C.int(shapeID),
+	return &Collision{handle: C.NewtonCreateCone(w.handle, C.dFloat(radius), C.dFloat(height), C.int(shapeID),
 		(*C.dFloat)(&offsetMatrix[0]))}
 }
 
 func (w *World) CreateCapsule(radius, height float32, shapeID int, offsetMatrix []float32) *Collision {
-	return &Collision{C.NewtonCreateCapsule(w.handle, C.dFloat(radius), C.dFloat(height), C.int(shapeID),
+	return &Collision{handle: C.NewtonCreateCapsule(w.handle, C.dFloat(radius), C.dFloat(height), C.int(shapeID),
 		(*C.dFloat)(&offsetMatrix[0]))}
 }
 
 func (w *World) CreateCylinder(radius, height float32, shapeID int, offsetMatrix []float32) *Collision {
-	return &Collision{C.NewtonCreateCylinder(w.handle, C.dFloat(radius), C.dFloat(height), C.int(shapeID),
+	return &Collision{handle: C.NewtonCreateCylinder(w.handle, C.dFloat(radius), C.dFloat(height), C.int(shapeID),
 		(*C.dFloat)(&offsetMatrix[0]))}
 }
 
 func (w *World) CreateTaperedCapsule(radio0, radio1, height float32, shapeID int, offsetMatrix []float32) *Collision {
-	return &Collision{C.NewtonCreateTaperedCapsule(w.handle, C.dFloat(radio0), C.dFloat(radio1), C.dFloat(height),
-		C.int(shapeID), (*C.dFloat)(&offsetMatrix[0]))}
-
+	return &Collision{handle: C.NewtonCreateTaperedCapsule(w.handle, C.dFloat(radio0), C.dFloat(radio1),
+		C.dFloat(height), C.int(shapeID), (*C.dFloat)(&offsetMatrix[0]))}
 }
 
 func (w *World) CreateTaperedCylinder(radio0, radio1, height float32, shapeID int, offsetMatrix []float32) *Collision {
-	return &Collision{C.NewtonCreateTaperedCylinder(w.handle, C.dFloat(radio0), C.dFloat(radio1), C.dFloat(height),
-		C.int(shapeID), (*C.dFloat)(&offsetMatrix[0]))}
-
+	return &Collision{handle: C.NewtonCreateTaperedCylinder(w.handle, C.dFloat(radio0), C.dFloat(radio1),
+		C.dFloat(height), C.int(shapeID), (*C.dFloat)(&offsetMatrix[0]))}
 }
 
 func (w *World) CreateChamferCylinder(radius, height float32, shapeID int, offsetMatrix []float32) *Collision {
-	return &Collision{C.NewtonCreateChamferCylinder(w.handle, C.dFloat(radius), C.dFloat(height), C.int(shapeID),
-		(*C.dFloat)(&offsetMatrix[0]))}
+	return &Collision{handle: C.NewtonCreateChamferCylinder(w.handle, C.dFloat(radius), C.dFloat(height),
+		C.int(shapeID), (*C.dFloat)(&offsetMatrix[0]))}
 }
 
 func (w *World) CreateConvexHull(count int, vertexCloud []float32, strideInBytes int, tolerance float32, shapeID int,
 	offsetMatrix []float32) *Collision {
-	return &Collision{C.NewtonCreateConvexHull(w.handle, C.int(count), (*C.dFloat)(&vertexCloud[0]),
+	return &Collision{handle: C.NewtonCreateConvexHull(w.handle, C.int(count), (*C.dFloat)(&vertexCloud[0]),
 		C.int(strideInBytes), C.dFloat(tolerance), C.int(shapeID), (*C.dFloat)(&offsetMatrix[0]))}
 }
 
 func (w *World) CreateConvexHullFromMesh(mesh *Mesh, tolerance float32, shapeID int) *Collision {
-	return &Collision{C.NewtonCreateConvexHullFromMesh(w.handle, mesh.handle, C.dFloat(tolerance), C.int(shapeID))}
+	return &Collision{handle: C.NewtonCreateConvexHullFromMesh(w.handle, mesh.handle, C.dFloat(tolerance),
+		C.int(shapeID))}
 }
 
 // Primitive typed methods
@@ -108,12 +113,12 @@ type Node struct {
 
 //Compound Collisions
 func (w *World) CreateCompoundCollision(shapeID int) *Collision {
-	return &Collision{C.NewtonCreateCompoundCollision(w.handle, C.int(shapeID))}
+	return &Collision{handle: C.NewtonCreateCompoundCollision(w.handle, C.int(shapeID))}
 }
 
 func (w *World) CreateCompoundCollisionFromMesh(mesh *Mesh, hullTolerance float32, shapeID,
 	subShapeID int) *Collision {
-	return &Collision{C.NewtonCreateCompoundCollisionFromMesh(w.handle, mesh.handle,
+	return &Collision{handle: C.NewtonCreateCompoundCollisionFromMesh(w.handle, mesh.handle,
 		C.dFloat(hullTolerance), C.int(shapeID), C.int(subShapeID))}
 }
 
@@ -161,13 +166,13 @@ func (c *Collision) CompoundNodeIndex(node *Node) int {
 }
 
 func (parent *Collision) CompoundCollisionFromNode(node *Node) *Collision {
-	return &Collision{C.NewtonCompoundCollisionGetCollisionFromNode(parent.handle, node.handle)}
+	return &Collision{handle: C.NewtonCompoundCollisionGetCollisionFromNode(parent.handle, node.handle)}
 }
 
 //SceneCollision
 
 func (w *World) CreateSceneCollision(shapeID int) *Collision {
-	return &Collision{C.NewtonCreateSceneCollision(w.handle, C.int(shapeID))}
+	return &Collision{handle: C.NewtonCreateSceneCollision(w.handle, C.int(shapeID))}
 }
 
 func (c *Collision) SceneBeginAddRemove() {
@@ -196,14 +201,22 @@ func (c *Collision) SceneNextNode(curNode *Node) *Node {
 }
 
 func (parent *Collision) SceneCollisionFromNode(node *Node) *Collision {
-	return &Collision{C.NewtonSceneCollisionGetCollisionFromNode(parent.handle, node.handle)}
+	return &Collision{handle: C.NewtonSceneCollisionGetCollisionFromNode(parent.handle, node.handle)}
 }
 
 //TreeCollision
 func (w *World) CreateTreeCollision(shapeID int) *Collision {
-	return &Collision{C.NewtonCreateTreeCollision(w.handle, C.int(shapeID))}
+	collision := &Collision{handle: C.NewtonCreateTreeCollision(w.handle, C.int(shapeID))}
+	//Set newton user data as Go object pointer	
+	C.NewtonCollisionSetUserData(collision.handle, unsafe.Pointer(collision))
+	globalPtr.add(collision)
+	return collision
 }
 
 func (w *World) CreateTreeCollsionFromMesh(mesh *Mesh, shapeID int) *Collision {
-	return &Collision{C.NewtonCreateTreeCollisionFromMesh(w.handle, mesh.handle, C.int(shapeID))}
+	collision := &Collision{handle: C.NewtonCreateTreeCollisionFromMesh(w.handle, mesh.handle, C.int(shapeID))}
+	//Set newton user data as Go object pointer	
+	C.NewtonCollisionSetUserData(collision.handle, unsafe.Pointer(collision))
+	globalPtr.add(collision)
+	return collision
 }

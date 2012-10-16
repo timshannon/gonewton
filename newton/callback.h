@@ -17,6 +17,8 @@ extern dFloat goRayFilterCB(NewtonBody*, dFloat*, int, void*, dFloat);
 extern unsigned goRayPrefilterCB(NewtonBody*, NewtonCollision*, void*);
 extern int goOnAABBOverlapCB(NewtonMaterial*,NewtonBody*, NewtonBody*, int);
 extern void goContactsProcessCB(NewtonJoint*, dFloat, int);
+extern dFloat goCollisionTreeRayCastCallback(NewtonBody*,NewtonCollision*, dFloat,
+	dFloat*, int, void*);
 
 void setGetTicksCountCB(NewtonWorld*);
 void setBodyLeaveWorldCB(NewtonWorld*);
@@ -26,6 +28,7 @@ void RayCast(NewtonWorld*, dFloat*, dFloat*, void*);
 int ConvexCast(NewtonWorld*, dFloat*, dFloat*, NewtonCollision*, dFloat*, void*, 
 		NewtonWorldConvexCastReturnInfo*, int, int);
 void SetCollisionCB(NewtonWorld*, int, int, void*);
+void SetUserRayCastCallback(NewtonCollision*);
 
 
 
