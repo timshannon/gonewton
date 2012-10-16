@@ -23,6 +23,15 @@ import (
 // As soon as we can pass a func pointer directly, half of this 
 // can go away.
 
+//goFloats creates a float32 slice of the given size of the passed in c array pointer
+func goFloats(cArray *C.dFloat, size int) []float32 {
+	//Copy for now.  Maybe we'll try with using the slice header to repoint the data
+	// instead if preformance thrashes with this
+	slice := make([]float32, size)
+	C.CopyFloatArray(cArray, (*C.dFloat)(&slice[0]), C.int(size))
+	return slice
+}
+
 type GetTicksCountHandler func() uint
 
 var getTicksCount GetTicksCountHandler
@@ -103,15 +112,6 @@ func (w *World) RayCast(p0 []float32, p1 []float32, filter RayFilterHandler, use
 	w.rayFilter = filter
 	w.rayPrefilter = prefilter
 	C.RayCast(w.handle, (*C.dFloat)(&p0[0]), (*C.dFloat)(&p1[0]), unsafe.Pointer(&userData))
-}
-
-//goFloats creates a float32 slice of the given size of the passed in c array pointer
-func goFloats(cArray *C.dFloat, size int) []float32 {
-	//Copy for now.  Maybe we'll try with using the slice header to repoint the data
-	// instead if preformance thrashes with this
-	slice := make([]float32, size)
-	C.CopyFloatArray(cArray, (*C.dFloat)(&slice[0]), C.int(size))
-	return slice
 }
 
 type ConvexCastReturnInfo struct {
@@ -222,8 +222,34 @@ type CollisionTreeRayCastCallback func(body *Body, treeCollision *Collision, int
 func goCollisionTreeRayCastCallback(body *C.NewtonBody, treeCollision *C.NewtonCollision, interception C.dFloat,
 	normal *C.dFloat, faceId C.int, userData unsafe.Pointer) C.dFloat {
 	b := globalPtr.get(unsafe.Pointer(body)).(*Body)
-	col := globalPtr.get(unsafe.Pointer(treeCollision)).(*Collision)
+	col := &Collision{handle: treeCollision}
+	col = globalPtr.get(col.ptr()).(*Collision)
 
-	return C.dFloat(col.raycastCallback(b, col, float32(interception), goFloats(normal, 3),
+	return C.dFloat(col.treeRaycastCallback(b, col, float32(interception), goFloats(normal, 3),
 		int(faceId), (interface{})(userData)))
+}
+
+func (c *Collision) SetTreeRayCastCallback(callback CollisionTreeRayCastCallback) {
+	c.treeRaycastCallback = callback
+
+	C.SetUserRayCastCallback(c.handle)
+}
+
+type TreeCollisionCallback func(bodyWithTreeCollision, body *Body, faceID, vertexCount int,
+	vertex []float32, vertexStrideInBytes int)
+
+var treeCollisionCallback TreeCollisionCallback
+
+//export goTreeCollisionCallback
+func goTreeCollisionCallback(bodyWithTreeCollision, body *C.NewtonBody, faceID, vertextCount C.int,
+	vertex *C.dFloat, vertexStrideInBytes C.int) {
+	bWithTreeCollision := globalPtr.get(unsafe.Pointer(bodyWithTreeCollision)).(*Body)
+	b := globalPtr.get(unsafe.Pointer(body)).(*Body)
+	treeCollisionCallback(bWithTreeCollision, b, int(faceID), int(vertextCount),
+		goFloats(vertex, int(vertextCount)), int(vertexStrideInBytes))
+}
+
+func StaticCollisionSetDebugCallback(staticCollision *Collision, userCallback TreeCollisionCallback) {
+	treeCollisionCallback = userCallback
+	C.SetStaticCollisionDebugCallback(staticCollision.handle)
 }

@@ -45,9 +45,15 @@ void SetUserRayCastCallback(NewtonCollision* treeCollision) {
 		(NewtonCollisionTreeRayCastCallback)goCollisionTreeRayCastCallback);
 }
 
+void SetStaticCollisionDebugCallback(NewtonCollision* staticCollision) {
+	NewtonStaticCollisionSetDebugCallback(staticCollision, (NewtonTreeCollisionCallback)goTreeCollisionCallback);
+}
+
 //helpers
 void CopyFloatArray(dFloat* src, dFloat* dest, int len) {
 	int i;
 	for(i = 0; i < len; i++) 
 		dest[i] = src[i];
 }
+
+

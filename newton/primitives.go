@@ -8,10 +8,27 @@ package newton
 import "C"
 import "unsafe"
 
+const (
+	CollisionSphere = iota
+	CollisionCylinder
+	CollisionTaperedCylinder
+	CollisionBox
+	CollisionCone
+	CollisionConvexhull
+	CollisionNull
+	CollisionCompound
+	CollisionTree
+	CollisionHeightfield
+	CollisionDeformablemesh
+	CollisionUsermesh
+	CollisionScene
+	CollisionCompoundBreakable
+)
+
 type Collision struct {
-	handle          *C.NewtonCollision
-	UserData        interface{}
-	raycastCallback CollisionTreeRayCastCallback
+	handle              *C.NewtonCollision
+	userData            interface{}
+	treeRaycastCallback CollisionTreeRayCastCallback
 }
 
 //collisions are instances in newton, so the  pointer on the Go side
@@ -94,9 +111,9 @@ func (c *Collision) SetIsTriggerVolume(value bool) {
 	C.NewtonCollisionSetAsTriggerVolume(c.handle, cint[value])
 }
 
-//func (c *Collision) FaceIndices(face int, faceIndices []int) int {
-//	return int(C.NewtonConvexHullGetFaceIndices(c.handle, C.int(face), (*C.int)(&faceIndices[0])))
-//}
+func (c *Collision) FaceIndices(face int, faceIndices []int) int {
+	return int(C.NewtonConvexHullGetFaceIndices(c.handle, C.int(face), (*C.int)(unsafe.Pointer(&faceIndices[0]))))
+}
 
 func (c *Collision) CalculateVolume() float32 {
 	return float32(C.NewtonConvexCollisionCalculateVolume(c.handle))
@@ -219,4 +236,80 @@ func (w *World) CreateTreeCollsionFromMesh(mesh *Mesh, shapeID int) *Collision {
 	C.NewtonCollisionSetUserData(collision.handle, unsafe.Pointer(collision))
 	globalPtr.add(collision)
 	return collision
+}
+
+func (c *Collision) BeginBuild() {
+	C.NewtonTreeCollisionBeginBuild(c.handle)
+}
+
+func (c *Collision) AddFace(vertexCount int, vertexPtr []float32, strideInBytes, faceAttribute int) {
+	C.NewtonTreeCollisionAddFace(c.handle, C.int(vertexCount), (*C.dFloat)(&vertexPtr[0]), C.int(strideInBytes),
+		C.int(faceAttribute))
+}
+
+//EndBuild ends the building of a Tree collision primative.
+// Optimize should be set to true for concave meshes
+func (c *Collision) EndBuild(optimize bool) {
+	C.NewtonTreeCollisionEndBuild(c.handle, cint[optimize])
+}
+
+func (c *Collision) FaceAttribute(faceIndexArray []int) int {
+	return int(C.NewtonTreeCollisionGetFaceAtribute(c.handle, (*C.int)(unsafe.Pointer(&faceIndexArray[0]))))
+}
+
+func (c *Collision) SetFaceAttribute(faceIndexArray []int, attribute int) {
+	C.NewtonTreeCollisionSetFaceAtribute(c.handle, (*C.int)(unsafe.Pointer(&faceIndexArray[0])),
+		C.int(attribute))
+}
+
+//skip for now
+//func (c *Collision) VertexListIndexListInAABB(p0, p1 []float32, vertexAray []int, 
+
+//General Purpose collision library functions
+
+func (c *Collision) CreateInstance() *Collision {
+	return &Collision{handle: C.NewtonCollisionCreateInstance(c.handle)}
+}
+
+func (c *Collision) Type() int {
+	return int(C.NewtonCollisionGetType(c.handle))
+}
+
+func (c *Collision) SetUserID(id uint) {
+	C.NewtonCollisionSetUserID(c.handle, C.unsigned(id))
+}
+
+func (c *Collision) UserID() uint {
+	return uint(C.NewtonCollisionGetUserID(c.handle))
+}
+
+func (c *Collision) UserData() interface{} {
+	//redirection necessary for handling instanced collisions
+	return globalPtr.get(c.ptr()).(*Collision).userData
+}
+
+func (c *Collision) SetUserData(data interface{}) {
+	globalPtr.get(c.ptr()).(*Collision).userData = data
+}
+
+func (c *Collision) SetMatrix(matrix []float32) {
+	C.NewtonCollisionSetMatrix(c.handle, (*C.dFloat)(&matrix[0]))
+}
+
+func (c *Collision) Matrix(matrix []float32) {
+	C.NewtonCollisionGetMatrix(c.handle, (*C.dFloat)(&matrix[0]))
+}
+
+func (c *Collision) SetScale(x, y, z float32) {
+	C.NewtonCollisionSetScale(c.handle, C.dFloat(x), C.dFloat(y), C.dFloat(z))
+}
+
+func (c *Collision) Scale() (x, y, z float32) {
+	C.NewtonCollisionGetScale(c.handle, (*C.dFloat)(&x), (*C.dFloat)(&y), (*C.dFloat)(&z))
+	return
+}
+
+func (c *Collision) Destroy() {
+	C.NewtonDestroyCollision(c.handle)
+	globalPtr.remove(c)
 }
