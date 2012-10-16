@@ -202,3 +202,13 @@ func (w *World) FirstBody() *Body {
 func (w *World) NextBody(curBody *Body) *Body {
 	return globalPtr.get(unsafe.Pointer(C.NewtonWorldGetNextBody(w.handle, curBody.handle))).(*Body)
 }
+
+//Low level standalone collision todo later
+//func (w *World) CollisionPointDistance(point []float32, collision *Collision, 
+
+//Not implementing transforms utilty functions, most people use use a go math lib
+
+func CalculateSpringDamperAcceleration(dt, ks, x, kd, s float32) float32 {
+	return float32(C.NewtonCalculateSpringDamperAcceleration(C.dFloat(dt), C.dFloat(ks), C.dFloat(x),
+		C.dFloat(kd), C.dFloat(s)))
+}

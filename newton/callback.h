@@ -19,6 +19,8 @@ extern int goOnAABBOverlapCB(NewtonMaterial*,NewtonBody*, NewtonBody*, int);
 extern void goContactsProcessCB(NewtonJoint*, dFloat, int);
 extern dFloat goCollisionTreeRayCastCallback(NewtonBody*,NewtonCollision*, dFloat,
 	dFloat*, int, void*);
+extern void goTreeCollisionCallback(NewtonBody*, NewtonBody*, int, int,
+	dFloat*, int);
 
 void setGetTicksCountCB(NewtonWorld*);
 void setBodyLeaveWorldCB(NewtonWorld*);
@@ -29,7 +31,7 @@ int ConvexCast(NewtonWorld*, dFloat*, dFloat*, NewtonCollision*, dFloat*, void*,
 		NewtonWorldConvexCastReturnInfo*, int, int);
 void SetCollisionCB(NewtonWorld*, int, int, void*);
 void SetUserRayCastCallback(NewtonCollision*);
-
+void SetStaticCollisionDebugCallback(NewtonCollision*);
 
 
 
