@@ -253,3 +253,21 @@ func StaticCollisionSetDebugCallback(staticCollision *Collision, userCallback Tr
 	treeCollisionCallback = userCallback
 	C.SetStaticCollisionDebugCallback(staticCollision.handle)
 }
+
+type BodyDestructorCallback func(body *Body)
+
+//export goBodyDestructor
+func goBodyDestructor(body *C.NewtonBody) {
+	b := globalPtr.get(unsafe.Pointer(body)).(*Body)
+
+	b.destructorCallback(b)
+}
+
+func (b *Body) SetDestructorCallback(callback BodyDestructorCallback) {
+	b.destructorCallback = callback
+	C.SetBodyDestructor(b.handle)
+}
+
+func (b *Body) DestructorCallback() BodyDestructorCallback {
+	return b.destructorCallback
+}

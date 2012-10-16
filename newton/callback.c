@@ -49,6 +49,10 @@ void SetStaticCollisionDebugCallback(NewtonCollision* staticCollision) {
 	NewtonStaticCollisionSetDebugCallback(staticCollision, (NewtonTreeCollisionCallback)goTreeCollisionCallback);
 }
 
+void SetBodyDestructor(NewtonBody* body) {
+	NewtonBodySetDestructorCallback(body, (NewtonBodyDestructor)goBodyDestructor);
+}
+
 //helpers
 void CopyFloatArray(dFloat* src, dFloat* dest, int len) {
 	int i;
