@@ -53,6 +53,15 @@ void SetBodyDestructor(NewtonBody* body) {
 	NewtonBodySetDestructorCallback(body, (NewtonBodyDestructor)goBodyDestructor);
 }
 
+void SetTransformCallback(NewtonBody* body) {
+	NewtonBodySetTransformCallback(body, (NewtonSetTransform)goTransformCallback);
+}
+
+void SetForceAndTorqueCallback(NewtonBody* body) {
+	NewtonBodySetForceAndTorqueCallback(body, (NewtonApplyForceAndTorque)goApplyForceAndTorque);
+}
+
+
 //helpers
 void CopyFloatArray(dFloat* src, dFloat* dest, int len) {
 	int i;

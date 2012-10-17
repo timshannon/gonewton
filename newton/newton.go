@@ -170,7 +170,9 @@ type Body struct {
 	UserData interface{}
 
 	//callbacks
-	destructorCallback BodyDestructorCallback
+	destructorCallback  BodyDestructorCallback
+	transformCallback   TransformCallback
+	applyForceAndTorque ApplyForceAndTorque
 }
 
 const (
@@ -317,4 +319,33 @@ func (b *Body) FreezeState() int {
 
 func (b *Body) SetFreezeState(state int) {
 	C.NewtonBodySetFreezeState(b.handle, C.int(state))
+}
+
+func (b *Body) BodyID() int { return int(C.NewtonBodyGetID(b.handle)) }
+
+func (b *Body) World() *World { return b.world }
+
+func (b *Body) Collision() *Collision {
+	return &Collision{handle: C.NewtonBodyGetCollision(b.handle)}
+}
+
+func (b *Body) MaterialGroupID() int {
+	return int(C.NewtonBodyGetMaterialGroupID(b.handle))
+}
+
+func (b *Body) ContinuousCollisionMode() int {
+	return int(C.NewtonBodyGetContinuousCollisionMode(b.handle))
+}
+
+func (b *Body) JointRecursiveCollision() int {
+	return int(C.NewtonBodyGetJointRecursiveCollision(b.handle))
+}
+
+func (b *Body) Matrix(matrix []float32) {
+	C.NewtonBodyGetMatrix(b.handle, (*C.dFloat)(&matrix[0]))
+}
+
+//Rotation gets the Quaternion (4) floats
+func (b *Body) Rotation(rotation []float32) {
+	C.NewtonBodyGetRotation(b.handle, (*C.dFloat)(&rotation[0]))
 }
