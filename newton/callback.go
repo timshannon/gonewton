@@ -27,6 +27,7 @@ import (
 func goFloats(cArray *C.dFloat, size int) []float32 {
 	//Copy for now.  Maybe we'll try with using the slice header to repoint the data
 	// instead if preformance thrashes with this
+	// Maybe use a temp array stored on the callback owner
 	slice := make([]float32, size)
 	C.CopyFloatArray(cArray, (*C.dFloat)(&slice[0]), C.int(size))
 	return slice
@@ -270,4 +271,41 @@ func (b *Body) SetDestructorCallback(callback BodyDestructorCallback) {
 
 func (b *Body) DestructorCallback() BodyDestructorCallback {
 	return b.destructorCallback
+}
+
+type TransformCallback func(body *Body, matrix []float32, threadIndex int)
+
+//export goTransformCallback
+func goTransformCallback(body *C.NewtonBody, matrix *C.dFloat, threadIndex C.int) {
+	b := globalPtr.get(unsafe.Pointer(body)).(*Body)
+
+	b.transformCallback(b, goFloats(matrix, 16), int(threadIndex))
+}
+
+func (b *Body) SetTransformCallback(callback TransformCallback) {
+	b.transformCallback = callback
+	C.SetTransformCallback(b.handle)
+}
+
+func (b *Body) TransformCallback() TransformCallback {
+	return b.transformCallback
+}
+
+type ApplyForceAndTorque func(body *Body, timestep float32, threadIndex int)
+
+//export goApplyForceAndTorque
+func goApplyForceAndTorque(body *C.NewtonBody, timestep C.dFloat, threadIndex C.int) {
+	b := globalPtr.get(unsafe.Pointer(body)).(*Body)
+
+	b.applyForceAndTorque(b, float32(timestep), int(threadIndex))
+}
+
+func (b *Body) SetForceAndTorqueCallback(callback ApplyForceAndTorque) {
+	b.applyForceAndTorque = callback
+
+	C.SetForceAndTorqueCallback(b.handle)
+}
+
+func (b *Body) ForceAndTorqueCallback() ApplyForceAndTorque {
+	return b.applyForceAndTorque
 }

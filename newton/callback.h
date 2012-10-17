@@ -22,7 +22,10 @@ extern dFloat goCollisionTreeRayCastCallback(NewtonBody*,NewtonCollision*, dFloa
 extern void goTreeCollisionCallback(NewtonBody*, NewtonBody*, int, int,
 	dFloat*, int);
 extern void goBodyDestructor(NewtonBody*); 
+extern void goTransformCallback(NewtonBody*, dFloat*, int); 
+extern void goApplyForceAndTorque(NewtonBody*, dFloat, int);
 
+ 
 
 void setGetTicksCountCB(NewtonWorld*);
 void setBodyLeaveWorldCB(NewtonWorld*);
@@ -35,7 +38,8 @@ void SetCollisionCB(NewtonWorld*, int, int, void*);
 void SetUserRayCastCallback(NewtonCollision*);
 void SetStaticCollisionDebugCallback(NewtonCollision*);
 void SetBodyDestructor(NewtonBody*); 
-
+void SetTransformCallback(NewtonBody*);
+void SetForceAndTorqueCallback(NewtonBody*);
 
 
 
