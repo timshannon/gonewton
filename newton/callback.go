@@ -309,3 +309,22 @@ func (b *Body) SetForceAndTorqueCallback(callback ApplyForceAndTorque) {
 func (b *Body) ForceAndTorqueCallback() ApplyForceAndTorque {
 	return b.applyForceAndTorque
 }
+
+type BuoyancyPlaneHandler func(collisionID int, globalSpaceMatrix, globalSpacePlane []float32) int
+
+//export goBuoyancyPlaneCallback
+func goBuoyancyPlaneCallback(collisionID C.int, context unsafe.Pointer, globalSpaceMatrix,
+	globalSpacePlane *C.dFloat) C.int {
+	b := globalPtr.get(context).(*Body)
+
+	return C.int(b.getBuoyancyPlane(int(collisionID), goFloats(globalSpaceMatrix, 16),
+		goFloats(globalSpacePlane, 16)))
+}
+
+func (b *Body) AddBuoyancyForce(fluidDensity, fluidLinearViscosity, fluidAngularViscosity float32,
+	gravityVector []float32, buoyancyPlane BuoyancyPlaneHandler) {
+	b.getBuoyancyPlane = buoyancyPlane
+
+	C.AddBuoyancyForce(b.handle, C.dFloat(fluidDensity), C.dFloat(fluidLinearViscosity),
+		C.dFloat(fluidAngularViscosity), (*C.dFloat)(&gravityVector[0]), unsafe.Pointer(b.handle))
+}

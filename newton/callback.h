@@ -24,7 +24,7 @@ extern void goTreeCollisionCallback(NewtonBody*, NewtonBody*, int, int,
 extern void goBodyDestructor(NewtonBody*); 
 extern void goTransformCallback(NewtonBody*, dFloat*, int); 
 extern void goApplyForceAndTorque(NewtonBody*, dFloat, int);
-
+extern int goBuoyancyPlaneCallback(int, void*, dFloat*, dFloat*);
  
 
 void setGetTicksCountCB(NewtonWorld*);
@@ -40,6 +40,7 @@ void SetStaticCollisionDebugCallback(NewtonCollision*);
 void SetBodyDestructor(NewtonBody*); 
 void SetTransformCallback(NewtonBody*);
 void SetForceAndTorqueCallback(NewtonBody*);
+void AddBuoyancyForce(NewtonBody*, dFloat, dFloat, dFloat, dFloat*, void*);
 
 
 
