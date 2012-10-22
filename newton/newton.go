@@ -173,6 +173,7 @@ type Body struct {
 	destructorCallback  BodyDestructorCallback
 	transformCallback   TransformCallback
 	applyForceAndTorque ApplyForceAndTorque
+	getBuoyancyPlane    BuoyancyPlaneHandler
 }
 
 const (
@@ -348,4 +349,90 @@ func (b *Body) Matrix(matrix []float32) {
 //Rotation gets the Quaternion (4) floats
 func (b *Body) Rotation(rotation []float32) {
 	C.NewtonBodyGetRotation(b.handle, (*C.dFloat)(&rotation[0]))
+}
+
+func (b *Body) MassMatrix(mass, Ixx, Iyy, Izz *float32) {
+	C.NewtonBodyGetMassMatrix(b.handle, (*C.dFloat)(mass), (*C.dFloat)(Ixx),
+		(*C.dFloat)(Iyy), (*C.dFloat)(Izz))
+}
+
+func (b *Body) InvMass(invMass, invIxx, invIyy, invIzz *float32) {
+	C.NewtonBodyGetInvMass(b.handle, (*C.dFloat)(invMass), (*C.dFloat)(invIxx),
+		(*C.dFloat)(invIyy), (*C.dFloat)(invIzz))
+}
+
+func (b *Body) InertiaMatrix(inertiaMatrix []float32) {
+	C.NewtonBodyGetInertiaMatrix(b.handle, (*C.dFloat)(&inertiaMatrix[0]))
+}
+
+func (b *Body) InvInertiaMatrix(invInertiaMatrix []float32) {
+	C.NewtonBodyGetInvInertiaMatrix(b.handle, (*C.dFloat)(&invInertiaMatrix[0]))
+}
+
+func (b *Body) Omega(vector []float32) {
+	C.NewtonBodyGetOmega(b.handle, (*C.dFloat)(&vector[0]))
+}
+
+func (b *Body) Velocity(vector []float32) {
+	C.NewtonBodyGetVelocity(b.handle, (*C.dFloat)(&vector[0]))
+}
+
+func (b *Body) Force(vector []float32) {
+	C.NewtonBodyGetForce(b.handle, (*C.dFloat)(&vector[0]))
+}
+
+func (b *Body) Torque(vector []float32) {
+	C.NewtonBodyGetTorque(b.handle, (*C.dFloat)(&vector[0]))
+}
+
+func (b *Body) ForceAcc(vector []float32) {
+	C.NewtonBodyGetForceAcc(b.handle, (*C.dFloat)(&vector[0]))
+}
+
+func (b *Body) TorqueAcc(vector []float32) {
+	C.NewtonBodyGetTorqueAcc(b.handle, (*C.dFloat)(&vector[0]))
+}
+
+func (b *Body) CentreOfMass(com []float32) {
+	C.NewtonBodyGetCentreOfMass(b.handle, (*C.dFloat)(&com[0]))
+}
+
+func (b *Body) AddImpulse(pointDeltaVeloc, pointPosit []float32) {
+	C.NewtonBodyAddImpulse(b.handle, (*C.dFloat)(&pointDeltaVeloc[0]), (*C.dFloat)(&pointPosit[0]))
+}
+
+func (b *Body) ApplyImpulsePair(linearImpulse, angularImpulse []float32) {
+	C.NewtonBodyApplyImpulsePair(b.handle, (*C.dFloat)(&linearImpulse[0]), (*C.dFloat)(&angularImpulse[0]))
+}
+
+func (b *Body) IntegrateVelocity(timestep float32) {
+	C.NewtonBodyIntegrateVelocity(b.handle, C.dFloat(timestep))
+}
+
+func (b *Body) LinearDamping() float32 {
+	return float32(C.NewtonBodyGetLinearDamping(b.handle))
+}
+
+func (b *Body) AngularDamping(result []float32) {
+	C.NewtonBodyGetAngularDamping(b.handle, (*C.dFloat)(&result[0]))
+}
+
+func (b *Body) AABB(p0, p1 []float32) {
+	C.NewtonBodyGetAABB(b.handle, (*C.dFloat)(&p0[0]), (*C.dFloat)(&p1[0]))
+}
+
+func (b *Body) FirstJoint() *Joint {
+	return globalPtr.get(unsafe.Pointer(C.NewtonBodyGetFirstJoint(b.handle))).(*Joint)
+}
+
+func (b *Body) NextJoint(curJoint *Joint) *Joint {
+	return globalPtr.get(unsafe.Pointer(C.NewtonBodyGetNextJoint(b.handle, curJoint.handle))).(*Joint)
+}
+
+func (b *Body) FirstContactJoint() *Joint {
+	return globalPtr.get(unsafe.Pointer(C.NewtonBodyGetFirstContactJoint(b.handle))).(*Joint)
+}
+
+func (b *Body) NextContactJoint(curJoint *Joint) *Joint {
+	return globalPtr.get(unsafe.Pointer(C.NewtonBodyGetNextContactJoint(b.handle, curJoint.handle))).(*Joint)
 }

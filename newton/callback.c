@@ -61,6 +61,12 @@ void SetForceAndTorqueCallback(NewtonBody* body) {
 	NewtonBodySetForceAndTorqueCallback(body, (NewtonApplyForceAndTorque)goApplyForceAndTorque);
 }
 
+void AddBuoyancyForce(NewtonBody* body, dFloat fluidDensity, dFloat fluidLinearViscosity, 
+			dFloat fluidAngularViscosity, dFloat* gravityVector , void* context) {
+	NewtonBodyAddBuoyancyForce(body, fluidDensity, fluidLinearViscosity, fluidAngularViscosity,
+			gravityVector, (NewtonGetBuoyancyPlane)goBuoyancyPlaneCallback, context);
+}
+
 
 //helpers
 void CopyFloatArray(dFloat* src, dFloat* dest, int len) {
