@@ -23,6 +23,13 @@ import (
 // As soon as we can pass a func pointer directly, half of this 
 // can go away.
 
+//tracking all objects with callbacks is getting convoluted
+// simplify,
+//	callbackparent -> callback
+//	if the callback declaration includes any object that exists
+// 	in both the callback declaration and the callback return
+//	it can be a "parent"
+
 //goFloats creates a float32 slice of the given size of the passed in c array pointer
 func goFloats(cArray *C.dFloat, size int) []float32 {
 	//Copy for now.  Maybe we'll try with using the slice header to repoint the data
@@ -181,21 +188,21 @@ func (w *World) SetMaterialCollisionCallback(matid0, matid1 int, userData interf
 }
 
 type MeshCollisionCollideDesc struct {
-	m_boxP0               []float32
-	m_boxP1               []float32
-	m_boxDistanceTravel   []float32
-	m_threadNumber        int
-	m_faceCount           int
-	m_vertexStrideInBytes int
-	m_skinThickness       float32
-	m_userData            interface{}
-	m_objBody             *Body
-	m_polySoupBody        *Body
-	m_objCollision        *Collision
-	m_polySoupCollision   *Collision
-	m_vertex              []float32
-	m_faceIndexCount      *int
-	m_faceVertexIndex     *int
+	M_boxP0               []float32
+	M_boxP1               []float32
+	M_boxDistanceTravel   []float32
+	M_threadNumber        int
+	M_faceCount           int
+	M_vertexStrideInBytes int
+	M_skinThickness       float32
+	M_userData            interface{}
+	M_objBody             *Body
+	M_polySoupBody        *Body
+	M_objCollision        *Collision
+	M_polySoupCollision   *Collision
+	M_vertex              []float32
+	M_faceIndexCount      *int
+	M_faceVertexIndex     *int
 }
 
 //Skip user mesh for now

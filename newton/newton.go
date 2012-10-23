@@ -11,29 +11,6 @@ package newton
 import "C"
 import "unsafe"
 
-//global objects that need to hang around so the callback pointers
-// don't get cleaned up by the GC.
-// This interface and type assist in managing the translation from
-// a C object to the stored Go object
-type cObject interface {
-	ptr() unsafe.Pointer
-}
-type ptrManager map[uintptr]cObject
-
-func (p ptrManager) add(object cObject) {
-	p[uintptr(object.ptr())] = object
-}
-
-func (p ptrManager) remove(object cObject) {
-	delete(p, uintptr(object.ptr()))
-}
-
-func (p ptrManager) get(ptr unsafe.Pointer) cObject {
-	return p[uintptr(ptr)]
-}
-
-var globalPtr ptrManager
-
 //used for bools from c interfaces 
 // I'm sure there's a better way to do this, but this works for now
 var gbool = map[int]bool{0: false, 1: true}
@@ -41,7 +18,6 @@ var cint = map[bool]C.int{false: C.int(0), true: C.int(1)}
 
 type World struct {
 	handle   *C.NewtonWorld
-	bodies   []*Body
 	UserData interface{}
 
 	//world unique callbacks
@@ -55,13 +31,6 @@ type World struct {
 	//meshCollisionCollide MeshCollisionCollideHandler
 }
 
-func (w *World) ptr() unsafe.Pointer {
-	return unsafe.Pointer(w.handle)
-}
-
-func init() {
-	globalPtr = make(ptrManager)
-}
 func Version() int    { return int(C.NewtonWorldGetVersion()) }
 func MemoryUsed() int { return int(C.NewtonGetMemoryUsed()) }
 
@@ -69,23 +38,12 @@ func CreateWorld() *World {
 	world := new(World)
 	world.handle = C.NewtonCreate()
 
-	globalPtr.add(world)
-
 	return world
-}
-
-func (w *World) deleteBodyPointers() {
-	for i := range w.bodies {
-		w.bodies[i].deleteJointPointers()
-		globalPtr.remove(w.bodies[i])
-
-	}
 }
 
 func (w *World) Destroy() {
 	C.NewtonDestroy(w.handle)
 	w.deleteBodyPointers()
-	globalPtr.remove(w)
 	w.handle = nil
 }
 
@@ -166,7 +124,6 @@ func CalculateSpringDamperAcceleration(dt, ks, x, kd, s float32) float32 {
 type Body struct {
 	handle   *C.NewtonBody
 	world    *World
-	joints   []*Joint
 	UserData interface{}
 
 	//callbacks
