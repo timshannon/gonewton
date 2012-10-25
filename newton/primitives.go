@@ -26,19 +26,7 @@ const (
 )
 
 type Collision struct {
-	handle              *C.NewtonCollision
-	userData            interface{}
-	treeRaycastCallback CollisionTreeRayCastCallback
-}
-
-//collisions are instances in newton, so the  pointer on the Go side
-// may not be the same object on the newton side.  Instead the go pointer
-// will be stored in the collsion user data.
-//  Note that this is only need for storing callbacks on collisions.
-// If a collision type doesn't have an associated callback, then we don't need to
-// retain the pointer.
-func (c *Collision) ptr() unsafe.Pointer {
-	return C.NewtonCollisionGetUserData(c.handle)
+	handle *C.NewtonCollision
 }
 
 type Mesh struct {
@@ -223,19 +211,11 @@ func (parent *Collision) SceneCollisionFromNode(node *Node) *Collision {
 
 //TreeCollision
 func (w *World) CreateTreeCollision(shapeID int) *Collision {
-	collision := &Collision{handle: C.NewtonCreateTreeCollision(w.handle, C.int(shapeID))}
-	//Set newton user data as Go object pointer	
-	C.NewtonCollisionSetUserData(collision.handle, unsafe.Pointer(collision))
-	globalPtr.add(collision)
-	return collision
+	return &Collision{handle: C.NewtonCreateTreeCollision(w.handle, C.int(shapeID))}
 }
 
 func (w *World) CreateTreeCollsionFromMesh(mesh *Mesh, shapeID int) *Collision {
-	collision := &Collision{handle: C.NewtonCreateTreeCollisionFromMesh(w.handle, mesh.handle, C.int(shapeID))}
-	//Set newton user data as Go object pointer	
-	C.NewtonCollisionSetUserData(collision.handle, unsafe.Pointer(collision))
-	globalPtr.add(collision)
-	return collision
+	return &Collision{handle: C.NewtonCreateTreeCollisionFromMesh(w.handle, mesh.handle, C.int(shapeID))}
 }
 
 func (c *Collision) BeginBuild() {
@@ -285,11 +265,11 @@ func (c *Collision) UserID() uint {
 
 func (c *Collision) UserData() interface{} {
 	//redirection necessary for handling instanced collisions
-	return globalPtr.get(c.ptr()).(*Collision).userData
+	return (interface{})(C.NewtonCollisionGetUserData(c.handle))
 }
 
 func (c *Collision) SetUserData(data interface{}) {
-	globalPtr.get(c.ptr()).(*Collision).userData = data
+	C.NewtonCollisionSetUserData(c.handle, unsafe.Pointer(&data))
 }
 
 func (c *Collision) SetMatrix(matrix []float32) {
@@ -311,5 +291,4 @@ func (c *Collision) Scale() (x, y, z float32) {
 
 func (c *Collision) Destroy() {
 	C.NewtonDestroyCollision(c.handle)
-	globalPtr.remove(c)
 }

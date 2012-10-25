@@ -12,7 +12,6 @@ import "C"
 
 type Material struct {
 	handle *C.NewtonMaterial
-	//parent *World
 }
 
 func (w *World) CreateMaterialGroupID() int {
@@ -27,8 +26,8 @@ func (w *World) DestroyAllMaterialGroupID() {
 	C.NewtonMaterialDestroyAllGroupID(w.handle)
 }
 
-func (w *World) MaterialUserData(matid0, matid1 int) *interface{} {
-	return (*interface{})(C.NewtonMaterialGetUserData(w.handle, C.int(matid0), C.int(matid1)))
+func (w *World) MaterialUserData(matid0, matid1 int) interface{} {
+	return (interface{})(C.NewtonMaterialGetUserData(w.handle, C.int(matid0), C.int(matid1)))
 }
 
 func (w *World) SetMaterialSurfaceThickness(matid0, matid1 int, thickness float32) {
