@@ -9,23 +9,7 @@ import "C"
 import "unsafe"
 
 type Joint struct {
-	handle   *C.NewtonJoint
-	body0    *Body
-	body1    *Body
-	UserData interface{}
-}
-
-func (j *Joint) ptr() unsafe.Pointer { return unsafe.Pointer(j.handle) }
-
-func (w *World) createGoJoint(cObject *C.NewtonJoint, body0, body1 *Body) *Joint {
-	joint := new(Joint)
-	joint.handle = cObject
-	joint.body0 = body0
-	joint.body1 = body1
-
-	globalPtr.add(joint)
-
-	return joint
+	handle *C.NewtonJoint
 }
 
 type Contact struct {
@@ -53,11 +37,11 @@ func (c *Contact) Material() *Material {
 }
 
 func (j *Joint) Body0() *Body {
-	return j.body0
+	return &Body{C.NewtonJointGetBody0(j.handle)}
 }
 
 func (j *Joint) Body1() *Body {
-	return j.body1
+	return &Body{C.NewtonJointGetBody1(j.handle)}
 }
 
 type JointRecord struct {
@@ -85,8 +69,8 @@ func (j *Joint) Info() *JointRecord {
 		MaxLinearDof:      goFloats(&cInfo.m_maxLinearDof[0], 3),
 		MinAngularDof:     goFloats(&cInfo.m_minAngularDof[0], 3),
 		MaxAngularDof:     goFloats(&cInfo.m_maxAngularDof[0], 3),
-		AttachBody0:       globalPtr.get(unsafe.Pointer(cInfo.m_attachBody_0)).(*Body),
-		AttachBody1:       globalPtr.get(unsafe.Pointer(cInfo.m_attachBody_1)).(*Body),
+		AttachBody0:       &Body{cInfo.m_attachBody_0},
+		AttachBody1:       &Body{cInfo.m_attachBody_1},
 		ExtraParameters:   goFloats(&cInfo.m_extraParameters[0], 16),
 		BodiesCollisionOn: int(cInfo.m_bodiesCollisionOn),
 		DescriptionType:   C.GoString(&cInfo.m_descriptionType[0]),

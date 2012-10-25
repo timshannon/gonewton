@@ -17,40 +17,22 @@ var gbool = map[int]bool{0: false, 1: true}
 var cint = map[bool]C.int{false: C.int(0), true: C.int(1)}
 
 type World struct {
-	handle   *C.NewtonWorld
-	UserData interface{}
-
-	//world unique callbacks
-	bodyLeaveWorld  BodyLeaveWorldHandler
-	jointIterator   JointIteratorHandler
-	bodyIterator    BodyIteratorHandler
-	rayFilter       RayFilterHandler
-	rayPrefilter    RayPrefilterHandler
-	onAABBOverlap   OnAABBOverlapHandler
-	contactsProcess ContactsProcessHandler
-	//meshCollisionCollide MeshCollisionCollideHandler
+	handle *C.NewtonWorld
 }
 
 func Version() int    { return int(C.NewtonWorldGetVersion()) }
 func MemoryUsed() int { return int(C.NewtonGetMemoryUsed()) }
 
 func CreateWorld() *World {
-	world := new(World)
-	world.handle = C.NewtonCreate()
-
-	return world
+	return &World{C.NewtonCreate()}
 }
 
 func (w *World) Destroy() {
 	C.NewtonDestroy(w.handle)
-	w.deleteBodyPointers()
-	w.handle = nil
 }
 
 func (w *World) DestroyAllBodies() {
 	C.NewtonDestroyAllBodies(w.handle)
-	w.deleteBodyPointers()
-	w.bodies = []*Body{}
 }
 
 func (w *World) InvalidateCache() { C.NewtonInvalidateCache(w.handle) }
@@ -60,7 +42,7 @@ func (w *World) InvalidateCache() { C.NewtonInvalidateCache(w.handle) }
 // 1 and greater increases iterations. Greater number less peformant but more accurate
 func (w *World) SetSolverModel(model int) { C.NewtonSetSolverModel(w.handle, C.int(model)) }
 
-//Skip multithredding for now
+//TODO: multithreading
 
 func (w *World) ReadPeformanceTicks(performanceEntry uint) uint {
 	return uint(C.NewtonReadPerformanceTicks(w.handle, C.unsigned(performanceEntry)))
@@ -81,7 +63,6 @@ func (w *World) Update(timestep float32) {
 func (w *World) UpdateAsync(timestep float32) {
 	C.NewtonUpdateAsync(w.handle, C.dFloat(timestep))
 }
-
 func (w *World) WaitForUpdateToFinish() {
 	C.NewtonWaitForUpdateToFinish(w.handle)
 }
@@ -103,17 +84,17 @@ func (w *World) ConstraintCount() int {
 }
 
 func (w *World) FirstBody() *Body {
-	return globalPtr.get(unsafe.Pointer(C.NewtonWorldGetFirstBody(w.handle))).(*Body)
+	return &Body{C.NewtonWorldGetFirstBody(w.handle)}
 }
 
 func (w *World) NextBody(curBody *Body) *Body {
-	return globalPtr.get(unsafe.Pointer(C.NewtonWorldGetNextBody(w.handle, curBody.handle))).(*Body)
+	return &Body{C.NewtonWorldGetNextBody(w.handle, curBody.handle)}
 }
 
 //Low level standalone collision todo later
 //func (w *World) CollisionPointDistance(point []float32, collision *Collision, 
 
-//Not implementing transforms utilty functions, most people use use a go math lib
+//Not implementing transforms utilty functions
 
 func CalculateSpringDamperAcceleration(dt, ks, x, kd, s float32) float32 {
 	return float32(C.NewtonCalculateSpringDamperAcceleration(C.dFloat(dt), C.dFloat(ks), C.dFloat(x),
@@ -122,15 +103,7 @@ func CalculateSpringDamperAcceleration(dt, ks, x, kd, s float32) float32 {
 
 //Bodies
 type Body struct {
-	handle   *C.NewtonBody
-	world    *World
-	UserData interface{}
-
-	//callbacks
-	destructorCallback  BodyDestructorCallback
-	transformCallback   TransformCallback
-	applyForceAndTorque ApplyForceAndTorque
-	getBuoyancyPlane    BuoyancyPlaneHandler
+	handle *C.NewtonBody
 }
 
 const (
@@ -139,39 +112,24 @@ const (
 	BodyDeformable
 )
 
-func (b *Body) ptr() unsafe.Pointer { return unsafe.Pointer(b.handle) }
-
-func (b *Body) deleteJointPointers() {
-	for i := range b.joints {
-		globalPtr.remove(b.joints[i])
-	}
-}
-
 func (w *World) CreateDynamicBody(collision *Collision, matrix []float32) *Body {
-	body := new(Body)
-	body.world = w
-
-	body.handle = C.NewtonCreateDynamicBody(w.handle, collision.handle, (*C.dFloat)(&matrix[0]))
-
-	globalPtr.add(body)
-	return body
+	return &Body{C.NewtonCreateDynamicBody(w.handle, collision.handle, (*C.dFloat)(&matrix[0]))}
 }
 
 func (w *World) CreateKinematicBody(collision *Collision, matrix []float32) *Body {
-	body := new(Body)
-	body.world = w
-
-	body.handle = C.NewtonCreateKinematicBody(w.handle, collision.handle, (*C.dFloat)(&matrix[0]))
-
-	globalPtr.add(body)
-	return body
+	return &Body{C.NewtonCreateKinematicBody(w.handle, collision.handle, (*C.dFloat)(&matrix[0]))}
 }
 
-func (b *Body) Destroy() {
-	C.NewtonDestroyBody(b.world.handle, b.handle)
-	b.deleteJointPointers()
-	globalPtr.remove(b)
-	b.handle = nil
+func (w *World) DestroyBody(body *Body) {
+	C.NewtonDestroyBody(w.handle, body.handle)
+}
+
+func (w *World) UserData() interface{} {
+	return (interface{})(C.NewtonWorldGetUserData(w.handle))
+}
+
+func (w *World) SetUserData(userData interface{}) {
+	C.NewtonWorldSetUserData(w.handle, unsafe.Pointer(&userData))
 }
 
 func (b *Body) Type() int {
@@ -281,7 +239,9 @@ func (b *Body) SetFreezeState(state int) {
 
 func (b *Body) BodyID() int { return int(C.NewtonBodyGetID(b.handle)) }
 
-func (b *Body) World() *World { return b.world }
+func (b *Body) World() *World {
+	return &World{C.NewtonBodyGetWorld(b.handle)}
+}
 
 func (b *Body) Collision() *Collision {
 	return &Collision{handle: C.NewtonBodyGetCollision(b.handle)}
@@ -379,17 +339,25 @@ func (b *Body) AABB(p0, p1 []float32) {
 }
 
 func (b *Body) FirstJoint() *Joint {
-	return globalPtr.get(unsafe.Pointer(C.NewtonBodyGetFirstJoint(b.handle))).(*Joint)
+	return &Joint{C.NewtonBodyGetFirstJoint(b.handle)}
 }
 
 func (b *Body) NextJoint(curJoint *Joint) *Joint {
-	return globalPtr.get(unsafe.Pointer(C.NewtonBodyGetNextJoint(b.handle, curJoint.handle))).(*Joint)
+	return &Joint{C.NewtonBodyGetNextJoint(b.handle, curJoint.handle)}
 }
 
 func (b *Body) FirstContactJoint() *Joint {
-	return globalPtr.get(unsafe.Pointer(C.NewtonBodyGetFirstContactJoint(b.handle))).(*Joint)
+	return &Joint{C.NewtonBodyGetFirstContactJoint(b.handle)}
 }
 
 func (b *Body) NextContactJoint(curJoint *Joint) *Joint {
-	return globalPtr.get(unsafe.Pointer(C.NewtonBodyGetNextContactJoint(b.handle, curJoint.handle))).(*Joint)
+	return &Joint{C.NewtonBodyGetNextContactJoint(b.handle, curJoint.handle)}
+}
+
+func (b *Body) UserData() interface{} {
+	return (interface{})(C.NewtonBodyGetUserData(b.handle))
+}
+
+func (b *Body) SetUserData(userData interface{}) {
+	C.NewtonBodySetUserData(b.handle, unsafe.Pointer(&userData))
 }
