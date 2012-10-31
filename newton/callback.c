@@ -67,6 +67,10 @@ void AddBuoyancyForce(NewtonBody* body, dFloat fluidDensity, dFloat fluidLinearV
 			gravityVector, (NewtonGetBuoyancyPlane)goBuoyancyPlaneCallback, context);
 }
 
+void SetConstraintDestructor(NewtonJoint* joint) {
+	NewtonJointSetDestructor(joint, (NewtonConstraintDestructor)goConstraintDestructor);
+}
+
 
 //helpers
 void CopyFloatArray(dFloat* src, dFloat* dest, int len) {
@@ -75,4 +79,8 @@ void CopyFloatArray(dFloat* src, dFloat* dest, int len) {
 		dest[i] = src[i];
 }
 
-
+void CopyShortArray(short* src, short* dest, int len) {
+	int i;
+	for(i = 0; i < len; i++) 
+		dest[i] = src[i];
+}

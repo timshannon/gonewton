@@ -360,3 +360,18 @@ func (b *Body) AddBuoyancyForce(fluidDensity, fluidLinearViscosity, fluidAngular
 	C.AddBuoyancyForce(b.handle, C.dFloat(fluidDensity), C.dFloat(fluidLinearViscosity),
 		C.dFloat(fluidAngularViscosity), (*C.dFloat)(&gravityVector[0]), unsafe.Pointer(&context))
 }
+
+type ConstraintDestructor func(me *Joint)
+
+var constraintDestructorOwners = make(map[owner]ConstraintDestructor)
+
+//export goConstraintDestructor
+func goConstraintDestructor(me *C.NewtonJoint) {
+	joint := &Joint{me}
+	constraintDestructorOwners[owner(me)](joint)
+}
+
+func (j *Joint) SetDestructor(destructor ConstraintDestructor) {
+	constraintDestructorOwners[owner(j.handle)] = destructor
+	C.SetConstraintDestructor(j.handle)
+}

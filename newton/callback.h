@@ -25,6 +25,7 @@ extern void goBodyDestructor(NewtonBody*);
 extern void goTransformCallback(NewtonBody*, dFloat*, int); 
 extern void goApplyForceAndTorque(NewtonBody*, dFloat, int);
 extern int goBuoyancyPlaneCallback(int, void*, dFloat*, dFloat*);
+extern void goConstraintDestructor(NewtonJoint*);
  
 
 void setGetTicksCountCB(NewtonWorld*);
@@ -41,9 +42,11 @@ void SetBodyDestructor(NewtonBody*);
 void SetTransformCallback(NewtonBody*);
 void SetForceAndTorqueCallback(NewtonBody*);
 void AddBuoyancyForce(NewtonBody*, dFloat, dFloat, dFloat, dFloat*, void*);
+void SetConstraintDestructor(NewtonJoint*);
 
 
 
 //helpers
 void CopyFloatArray(dFloat*, dFloat*, int); 
+void CopyShortArray(short*, short*, int); 
 #endif //_CALLBACK_H_
