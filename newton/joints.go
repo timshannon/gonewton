@@ -1,8 +1,12 @@
+// Copyright 2012 Tim Shannon. All rights reserved.  
+// Use of this source code is governed by the MIT license 
+// that can be found in the LICENSE file.  
 package newton
 
 /*
 #cgo   linux LDFLAGS: -L/usr/local/lib -lNewton -lstdc++
 #include "Newton.h"
+#include "callback.h"
 #include <stdlib.h>
 */
 import "C"
@@ -103,4 +107,80 @@ func (j *Joint) Stiffness() float32 {
 
 func (j *Joint) SetStiffness(stiffness float32) {
 	C.NewtonJointSetStiffness(j.handle, C.dFloat(stiffness))
+}
+
+func (w *World) DestroyJoint(joint *Joint) {
+	C.NewtonDestroyJoint(w.handle, joint.handle)
+}
+
+//Particle Systems interface (soft bodies, pressure bodies, and cloth)  
+
+type DeformableMeshSegment struct {
+	handle          *C.NewtonDeformableMeshSegment
+	collisionParent *C.NewtonCollision
+}
+
+func (w *World) CreateDeformableMesh(mesh *Mesh, shapeID int) *Collision {
+	return &Collision{C.NewtonCreateDeformableMesh(w.handle, mesh.handle, C.int(shapeID))}
+}
+
+func (c *Collision) SetDeformableMeshPlasticity(plasticity float32) {
+	C.NewtonDeformableMeshSetPlasticity(c.handle, C.dFloat(plasticity))
+}
+
+func (c *Collision) SetDeformableMeshStiffness(stiffness float32) {
+	C.NewtonDeformableMeshSetStiffness(c.handle, C.dFloat(stiffness))
+}
+
+func (c *Collision) SetDeformableMeshSkinThickness(skinThickness float32) {
+	C.NewtonDeformableMeshSetSkinThickness(c.handle, C.dFloat(skinThickness))
+}
+
+func (w *World) CreateDeformableBody(deformableMesh *Collision, matrix []float32) *Body {
+	return &Body{C.NewtonCreateDeformableBody(w.handle, deformableMesh.handle,
+		(*C.dFloat)(&matrix[0]))}
+}
+
+func (c *Collision) DeformableMeshUpdateRenderNormals() {
+	C.NewtonDeformableMeshUpdateRenderNormals(c.handle)
+}
+
+func (c *Collision) DeformableMeshVertexCount() int {
+	return int(C.NewtonDeformableMeshGetVertexCount(c.handle))
+}
+
+func (c *Collision) DeformableMeshVertexStreams(vertexStrideInByte int, vertex []float32,
+	normalStrideInByte int, normal []float32, uvStrideInByte0 int, uv0 []float32,
+	uvStrideInByte1 int, uv1 []float32) {
+	C.NewtonDeformableMeshGetVertexStreams(c.handle, C.int(vertexStrideInByte), (*C.dFloat)(&vertex[0]),
+		C.int(normalStrideInByte), (*C.dFloat)(&normal[0]), C.int(uvStrideInByte0),
+		(*C.dFloat)(&uv0[0]), C.int(uvStrideInByte1), (*C.dFloat)(&uv1[0]))
+}
+
+func (c *Collision) DeformableMeshFirstSegment() *DeformableMeshSegment {
+	return &DeformableMeshSegment{C.NewtonDeformableMeshGetFirstSegment(c.handle), c.handle}
+}
+
+func (c *Collision) DeformableMeshNextSegment(curSegment *DeformableMeshSegment) *DeformableMeshSegment {
+	return &DeformableMeshSegment{C.NewtonDeformableMeshGetNextSegment(c.handle, curSegment.handle), c.handle}
+}
+
+func (segment *DeformableMeshSegment) MaterialID() int {
+	return int(C.NewtonDeformableMeshSegmentGetMaterialID(segment.collisionParent, segment.handle))
+}
+
+func (segment *DeformableMeshSegment) IndexCount() int {
+	return int(C.NewtonDeformableMeshSegmentGetIndexCount(segment.collisionParent, segment.handle))
+}
+
+func (segment *DeformableMeshSegment) IndexList(result []int) {
+	indexList := C.NewtonDeformableMeshSegmentGetIndexList(segment.collisionParent, segment.handle)
+	C.CopyShortArray(indexList, (*C.short)(unsafe.Pointer(&result[0])), C.int(len(result)))
+}
+
+//Ball and Socket Joint
+
+func (w *World) CreateBallAndSocket(pivotPoint []float32, child, parent *Body) *Joint {
+	return &Joint{C.NewtonConstraintCreateBall(w.handle, (*C.dFloat)(&pivotPoint[0]),
+		child.handle, parent.handle)}
 }
