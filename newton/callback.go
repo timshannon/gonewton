@@ -361,6 +361,8 @@ func (b *Body) AddBuoyancyForce(fluidDensity, fluidLinearViscosity, fluidAngular
 		C.dFloat(fluidAngularViscosity), (*C.dFloat)(&gravityVector[0]), unsafe.Pointer(&context))
 }
 
+//Joint callbacks
+
 type ConstraintDestructor func(me *Joint)
 
 var constraintDestructorOwners = make(map[owner]ConstraintDestructor)
@@ -374,4 +376,83 @@ func goConstraintDestructor(me *C.NewtonJoint) {
 func (j *Joint) SetDestructor(destructor ConstraintDestructor) {
 	constraintDestructorOwners[owner(j.handle)] = destructor
 	C.SetConstraintDestructor(j.handle)
+}
+
+type BallCallback func(joint *Joint, timestep float32)
+
+var ballCallbackOwners = make(map[owner]BallCallback)
+
+//export goBallCallback
+func goBallCallback(joint *C.NewtonJoint, timestep C.dFloat) {
+	j := &Joint{joint}
+	ballCallbackOwners[owner(joint)](j, float32(timestep))
+}
+
+func SetBallCallback(joint *Joint, callback BallCallback) {
+	ballCallbackOwners[owner(joint.handle)] = callback
+	C.BallSetUserCallback(joint.handle)
+}
+
+type HingeCallback func(joint *Joint, desc *HingeSliderUpdateDesc) uint
+
+var HingeCallbackOwners = make(map[owner]HingeCallback)
+
+//export goHingeCallback
+func goHingeCallback(joint *C.NewtonJoint, desc *C.NewtonHingeSliderUpdateDesc) C.unsigned {
+	j := &Joint{joint}
+	gDesc := &HingeSliderUpdateDesc{desc}
+	return C.unsigned(HingeCallbackOwners[owner(joint)](j, gDesc))
+}
+
+func SetHingeCallback(joint *Joint, callback HingeCallback) {
+	HingeCallbackOwners[owner(joint.handle)] = callback
+	C.HingeSetUserCallback(joint.handle)
+}
+
+type SliderCallback func(joint *Joint, desc *HingeSliderUpdateDesc) uint
+
+var SliderCallbackOwners = make(map[owner]SliderCallback)
+
+//export goSliderCallback
+func goSliderCallback(joint *C.NewtonJoint, desc *C.NewtonHingeSliderUpdateDesc) C.unsigned {
+	j := &Joint{joint}
+	gDesc := &HingeSliderUpdateDesc{desc}
+	return C.unsigned(SliderCallbackOwners[owner(joint)](j, gDesc))
+}
+
+func SetSliderCallback(joint *Joint, callback SliderCallback) {
+	SliderCallbackOwners[owner(joint.handle)] = callback
+	C.SliderSetUserCallback(joint.handle)
+}
+
+type CorkscrewCallback func(joint *Joint, desc *HingeSliderUpdateDesc) uint
+
+var CorkscrewCallbackOwners = make(map[owner]CorkscrewCallback)
+
+//export goCorkscrewCallback
+func goCorkscrewCallback(joint *C.NewtonJoint, desc *C.NewtonHingeSliderUpdateDesc) C.unsigned {
+	j := &Joint{joint}
+	gDesc := &HingeSliderUpdateDesc{desc}
+	return C.unsigned(CorkscrewCallbackOwners[owner(joint)](j, gDesc))
+}
+
+func SetCorkscrewCallback(joint *Joint, callback CorkscrewCallback) {
+	CorkscrewCallbackOwners[owner(joint.handle)] = callback
+	C.CorkscrewSetUserCallback(joint.handle)
+}
+
+type UniversalCallback func(joint *Joint, desc *HingeSliderUpdateDesc) uint
+
+var UniversalCallbackOwners = make(map[owner]UniversalCallback)
+
+//export goUniversalCallback
+func goUniversalCallback(joint *C.NewtonJoint, desc *C.NewtonHingeSliderUpdateDesc) C.unsigned {
+	j := &Joint{joint}
+	gDesc := &HingeSliderUpdateDesc{desc}
+	return C.unsigned(UniversalCallbackOwners[owner(joint)](j, gDesc))
+}
+
+func SetUniversalCallback(joint *Joint, callback UniversalCallback) {
+	UniversalCallbackOwners[owner(joint.handle)] = callback
+	C.UniversalSetUserCallback(joint.handle)
 }

@@ -292,3 +292,101 @@ func (c *Collision) Scale() (x, y, z float32) {
 func (c *Collision) Destroy() {
 	C.NewtonDestroyCollision(c.handle)
 }
+
+//Mesh
+func (w *World) CreateMesh() *Mesh {
+	return &Mesh{C.NewtonMeshCreate(w.handle)}
+}
+
+func (m *Mesh) Duplicate() *Mesh {
+	return &Mesh{C.NewtonMeshCreateFromMesh(m.handle)}
+}
+
+func (c *Collision) CreateMesh() *Mesh {
+	return &Mesh{C.NewtonMeshCreateFromCollision(c.handle)}
+}
+
+func (w *World) CreateConvexMesh(pointCount int, vertexCloud []float32, strideInBytes int,
+	tolerance float32) *Mesh {
+	return &Mesh{C.NewtonMeshCreateConvexHull(w.handle, C.int(pointCount), (*C.dFloat)(&vertexCloud[0]),
+		C.int(strideInBytes), C.dFloat(tolerance))}
+}
+
+func (w *World) CreateDelaunayTetrahedralizationMesh(pointCount int, vertexCloud []float32, strideInBytes,
+	materialID int, textureMatrix []float32) *Mesh {
+	return &Mesh{C.NewtonMeshCreateDelaunayTetrahedralization(w.handle, C.int(pointCount),
+		(*C.dFloat)(&vertexCloud[0]), C.int(strideInBytes), C.int(materialID),
+		(*C.dFloat)(&textureMatrix[0]))}
+}
+
+func (w *World) CreateVoronoiConvexDecompositionMesh(pointCount int, vertexCloud []float32, strideInBytes,
+	materialID int, textureMatrix []float32, borderConvexSize float32) *Mesh {
+	return &Mesh{C.NewtonMeshCreateVoronoiConvexDecomposition(w.handle, C.int(pointCount),
+		(*C.dFloat)(&vertexCloud[0]), C.int(strideInBytes), C.int(materialID),
+		(*C.dFloat)(&textureMatrix[0]), C.dFloat(borderConvexSize))}
+}
+
+func (m *Mesh) Destroy() {
+	C.NewtonMeshDestroy(m.handle)
+}
+
+func (m *Mesh) ApplyTransform(matrix []float32) {
+	C.NewtonMesApplyTransform(m.handle, (*C.dFloat)(&matrix[0]))
+}
+
+func (m *Mesh) CalculateOOBB(matrix []float32, x, y, z *float32) {
+	C.NewtonMeshCalculateOOBB(m.handle, (*C.dFloat)(&matrix[0]), (*C.dFloat)(x),
+		(*C.dFloat)(y), (*C.dFloat)(z))
+}
+
+func (m *Mesh) CalculateVertexNormals(angleInRadians float32) {
+	C.NewtonMeshCalculateVertexNormals(m.handle, C.dFloat(angleInRadians))
+}
+
+func (m *Mesh) ApplySphericalMapping(material int) {
+	C.NewtonMeshApplySphericalMapping(m.handle, C.int(material))
+}
+
+func (m *Mesh) ApplyBoxMapping(front, side, top int) {
+	C.NewtonMeshApplyBoxMapping(m.handle, C.int(front), C.int(side), C.int(top))
+}
+
+func (m *Mesh) ApplyCylindricalMapping(cylinderMaterial, capMaterial int) {
+	C.NewtonMeshApplyCylindricalMapping(m.handle, C.int(cylinderMaterial), C.int(capMaterial))
+}
+
+func (m *Mesh) IsOpenMesh() bool {
+	return gbool[int(C.NewtonMeshIsOpenMesh(m.handle))]
+}
+
+func (m *Mesh) FixTJoints() {
+	C.NewtonMeshFixTJoints(m.handle)
+}
+
+func (m *Mesh) Polygonize() {
+	C.NewtonMeshPolygonize(m.handle)
+}
+
+func (m *Mesh) Triangulate() {
+	C.NewtonMeshTriangulate(m.handle)
+}
+
+func (m *Mesh) Union(clipper *Mesh, clipperMatrix []float32) {
+	C.NewtonMeshUnion(m.handle, clipper.handle, (*C.dFloat)(&clipperMatrix[0]))
+}
+
+func (m *Mesh) Difference(clipper *Mesh, clipperMatrix []float32) {
+	C.NewtonMeshDifference(m.handle, clipper.handle, (*C.dFloat)(&clipperMatrix[0]))
+}
+
+func (m *Mesh) Intersection(clipper *Mesh, clipperMatrix []float32) {
+	C.NewtonMeshIntersection(m.handle, clipper.handle, (*C.dFloat)(&clipperMatrix[0]))
+}
+
+func (m *Mesh) Clip(clipper *Mesh, clipperMatrix []float32) (topMesh, bottomMesh *Mesh) {
+	topMesh = new(Mesh)
+	bottomMesh = new(Mesh)
+	//fix pointer to pointer
+	C.NewtonMeshClip(m.handle, clipper.handle, (*C.dFloat)(&clipperMatrix[0]),
+		topMesh.handle, bottomMesh.handle)
+}

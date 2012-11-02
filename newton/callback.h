@@ -26,7 +26,11 @@ extern void goTransformCallback(NewtonBody*, dFloat*, int);
 extern void goApplyForceAndTorque(NewtonBody*, dFloat, int);
 extern int goBuoyancyPlaneCallback(int, void*, dFloat*, dFloat*);
 extern void goConstraintDestructor(NewtonJoint*);
- 
+extern void goBallCallback(NewtonJoint*,dFloat); 
+extern unsigned goHingeCallback(NewtonJoint*,NewtonHingeSliderUpdateDesc*); 
+extern unsigned goSliderCallback(NewtonJoint*,NewtonHingeSliderUpdateDesc*); 
+extern unsigned goCorkscrewCallback(NewtonJoint*,NewtonHingeSliderUpdateDesc*); 
+extern unsigned goUniversalCallback(NewtonJoint*,NewtonHingeSliderUpdateDesc*); 
 
 void setGetTicksCountCB(NewtonWorld*);
 void setBodyLeaveWorldCB(NewtonWorld*);
@@ -43,6 +47,11 @@ void SetTransformCallback(NewtonBody*);
 void SetForceAndTorqueCallback(NewtonBody*);
 void AddBuoyancyForce(NewtonBody*, dFloat, dFloat, dFloat, dFloat*, void*);
 void SetConstraintDestructor(NewtonJoint*);
+void BallSetUserCallback(NewtonJoint*);
+void HingeSetUserCallback(NewtonJoint*);
+void SliderSetUserCallback(NewtonJoint*);
+void CorkscrewSetUserCallback(NewtonJoint*);
+void UniversalSetUserCallback(NewtonJoint*);
 
 
 
