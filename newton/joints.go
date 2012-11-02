@@ -180,7 +180,174 @@ func (segment *DeformableMeshSegment) IndexList(result []int) {
 
 //Ball and Socket Joint
 
-func (w *World) CreateBallAndSocket(pivotPoint []float32, child, parent *Body) *Joint {
+func (w *World) CreateBall(pivotPoint []float32, child, parent *Body) *Joint {
 	return &Joint{C.NewtonConstraintCreateBall(w.handle, (*C.dFloat)(&pivotPoint[0]),
 		child.handle, parent.handle)}
+}
+
+func (j *Joint) BallJointAngle(angle []float32) {
+	C.NewtonBallGetJointAngle(j.handle, (*C.dFloat)(&angle[0]))
+}
+
+func (j *Joint) BallJointOmega(omega []float32) {
+	C.NewtonBallGetJointOmega(j.handle, (*C.dFloat)(&omega[0]))
+}
+
+func (j *Joint) BallJointForce(force []float32) {
+	C.NewtonBallGetJointForce(j.handle, (*C.dFloat)(&force[0]))
+}
+
+func (j *Joint) SetBallConeLimits(pin []float32, maxConeAngle, maxTwistAngle float32) {
+	C.NewtonBallSetConeLimits(j.handle, (*C.dFloat)(&pin[0]), C.dFloat(maxConeAngle),
+		C.dFloat(maxTwistAngle))
+}
+
+//Hinge Joint
+
+type HingeSliderUpdateDesc struct {
+	handle *C.NewtonHingeSliderUpdateDesc
+}
+
+func (d *HingeSliderUpdateDesc) Acceleration() float32 {
+	return float32(d.handle.m_accel)
+}
+
+func (d *HingeSliderUpdateDesc) MinFriction() float32 {
+	return float32(d.handle.m_minFriction)
+}
+
+func (d *HingeSliderUpdateDesc) MaxFriction() float32 {
+	return float32(d.handle.m_maxFriction)
+}
+
+func (d *HingeSliderUpdateDesc) Timestep() float32 {
+	return float32(d.handle.m_timestep)
+}
+
+func (w *World) CreateHinge(pivotPoint, pinDir []float32, child, parent *Body) *Joint {
+	return &Joint{C.NewtonConstraintCreateHinge(w.handle, (*C.dFloat)(&pivotPoint[0]),
+		(*C.dFloat)(&pinDir[0]), child.handle, parent.handle)}
+}
+
+func (j *Joint) HingeJointAngle() float32 {
+	return float32(C.NewtonHingeGetJointAngle(j.handle))
+}
+
+func (j *Joint) HingeJointOmega() float32 {
+	return float32(C.NewtonHingeGetJointOmega(j.handle))
+}
+
+func (j *Joint) HingeJointForce(force []float32) {
+	C.NewtonHingeGetJointForce(j.handle, (*C.dFloat)(&force[0]))
+}
+
+func (j *Joint) HingeCalculateStopAlpha(desc *HingeSliderUpdateDesc, angle float32) float32 {
+	return float32(C.NewtonHingeCalculateStopAlpha(j.handle, desc.handle, C.dFloat(angle)))
+}
+
+//Slider Joint
+
+func (w *World) CreateSlider(pivotPoint, pinDir []float32, child, parent *Body) *Joint {
+	return &Joint{C.NewtonConstraintCreateSlider(w.handle, (*C.dFloat)(&pivotPoint[0]),
+		(*C.dFloat)(&pinDir[0]), child.handle, parent.handle)}
+}
+
+func (j *Joint) SliderJointPosit() float32 {
+	return float32(C.NewtonSliderGetJointPosit(j.handle))
+}
+
+func (j *Joint) SliderJointVeloc() float32 {
+	return float32(C.NewtonSliderGetJointVeloc(j.handle))
+}
+
+func (j *Joint) SliderJointForce(force []float32) {
+	C.NewtonSliderGetJointForce(j.handle, (*C.dFloat)(&force[0]))
+}
+
+func (j *Joint) SliderCalculateStopAccel(desc *HingeSliderUpdateDesc, position float32) float32 {
+	return float32(C.NewtonSliderCalculateStopAccel(j.handle, desc.handle, C.dFloat(position)))
+}
+
+//Corkscrew Joint
+
+func (w *World) CreateCorkscrew(pivotPoint, pinDir []float32, child, parent *Body) *Joint {
+	return &Joint{C.NewtonConstraintCreateCorkscrew(w.handle, (*C.dFloat)(&pivotPoint[0]),
+		(*C.dFloat)(&pinDir[0]), child.handle, parent.handle)}
+}
+
+func (j *Joint) CorkscrewJointPosit() float32 {
+	return float32(C.NewtonCorkscrewGetJointPosit(j.handle))
+}
+
+func (j *Joint) CorkscrewJointAngle() float32 {
+	return float32(C.NewtonCorkscrewGetJointAngle(j.handle))
+}
+
+func (j *Joint) CorkscrewJointVeloc() float32 {
+	return float32(C.NewtonCorkscrewGetJointVeloc(j.handle))
+}
+
+func (j *Joint) CorkscrewJointOmega() float32 {
+	return float32(C.NewtonCorkscrewGetJointOmega(j.handle))
+}
+
+func (j *Joint) CorkscrewJointForce(force []float32) {
+	C.NewtonCorkscrewGetJointForce(j.handle, (*C.dFloat)(&force[0]))
+}
+
+func (j *Joint) CorkscrewCalculateStopAccel(desc *HingeSliderUpdateDesc, position float32) float32 {
+	return float32(C.NewtonCorkscrewCalculateStopAccel(j.handle, desc.handle, C.dFloat(position)))
+}
+
+func (j *Joint) CorkscrewCalculateStopAlpha(desc *HingeSliderUpdateDesc, angle float32) float32 {
+	return float32(C.NewtonCorkscrewCalculateStopAlpha(j.handle, desc.handle, C.dFloat(angle)))
+}
+
+//Univeral Joint
+
+func (w *World) CreateUniversal(pivotPoint, pinDir0, pinDir1 []float32, child, parent *Body) *Joint {
+	return &Joint{C.NewtonConstraintCreateUniversal(w.handle, (*C.dFloat)(&pivotPoint[0]),
+		(*C.dFloat)(&pinDir0[0]), (*C.dFloat)(&pinDir1[0]), child.handle, parent.handle)}
+}
+
+func (j *Joint) UniversalJointAngle0() float32 {
+	return float32(C.NewtonUniversalGetJointAngle0(j.handle))
+}
+
+func (j *Joint) UniversalJointAngle1() float32 {
+	return float32(C.NewtonUniversalGetJointAngle1(j.handle))
+}
+
+func (j *Joint) UniversalJointOmega0() float32 {
+	return float32(C.NewtonUniversalGetJointOmega0(j.handle))
+}
+
+func (j *Joint) UniversalJointOmega1() float32 {
+	return float32(C.NewtonUniversalGetJointOmega1(j.handle))
+}
+
+func (j *Joint) UniversalJointForce(force []float32) {
+	C.NewtonUniversalGetJointForce(j.handle, (*C.dFloat)(&force[0]))
+}
+
+func (j *Joint) UniversalCalculateStopAlpha0(desc *HingeSliderUpdateDesc, angle float32) float32 {
+	return float32(C.NewtonUniversalCalculateStopAlpha0(j.handle, desc.handle, C.dFloat(angle)))
+}
+
+func (j *Joint) UniversalCalculateStopAlpha1(desc *HingeSliderUpdateDesc, angle float32) float32 {
+	return float32(C.NewtonUniversalCalculateStopAlpha1(j.handle, desc.handle, C.dFloat(angle)))
+}
+
+//Up Vector Joint
+func (w *World) CreateUpVector(pinDir []float32, body *Body) *Joint {
+	return &Joint{C.NewtonConstraintCreateUpVector(w.handle, (*C.dFloat)(&pinDir[0]),
+		body.handle)}
+}
+
+func (j *Joint) UpVectorPin(pinDir []float32) {
+	C.NewtonUpVectorGetPin(j.handle, (*C.dFloat)(&pinDir[0]))
+}
+
+func (j *Joint) UpVectorSetPin(pinDir []float32) {
+	C.NewtonUpVectorSetPin(j.handle, (*C.dFloat)(&pinDir[0]))
 }

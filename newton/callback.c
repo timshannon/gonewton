@@ -71,6 +71,25 @@ void SetConstraintDestructor(NewtonJoint* joint) {
 	NewtonJointSetDestructor(joint, (NewtonConstraintDestructor)goConstraintDestructor);
 }
 
+void BallSetUserCallback(NewtonJoint* joint) {
+	NewtonBallSetUserCallback(joint, (NewtonBallCallback)goBallCallback);
+}
+
+void HingeSetUserCallback(NewtonJoint* joint) {
+	NewtonHingeSetUserCallback(joint, (NewtonHingeCallback)goHingeCallback);
+}
+
+void SliderSetUserCallback(NewtonJoint* joint) {
+	NewtonSliderSetUserCallback(joint, (NewtonSliderCallback)goSliderCallback);
+}
+
+void CorkscrewSetUserCallback(NewtonJoint* joint) {
+	NewtonCorkscrewSetUserCallback(joint, (NewtonCorkscrewCallback)goCorkscrewCallback);
+}
+
+void UniversalSetUserCallback(NewtonJoint* joint) {
+	NewtonUniversalSetUserCallback(joint, (NewtonUniversalCallback)goUniversalCallback);
+}
 
 //helpers
 void CopyFloatArray(dFloat* src, dFloat* dest, int len) {
