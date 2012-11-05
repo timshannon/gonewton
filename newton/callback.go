@@ -456,3 +456,27 @@ func SetUniversalCallback(joint *Joint, callback UniversalCallback) {
 	UniversalCallbackOwners[owner(joint.handle)] = callback
 	C.UniversalSetUserCallback(joint.handle)
 }
+
+type ReportProgress func(progressPercent float32)
+
+var reportProgress ReportProgress
+
+//export goReportProgress
+func goReportProgress(progressPercent C.dFloat) {
+	reportProgress(float32(progressPercent))
+}
+
+func (m *Mesh) Simplify(maxVertexCount int, reportProgressCallback ReportProgress) *Mesh {
+	reportProgress = reportProgressCallback
+
+	return &Mesh{C.MeshSimplify(m.handle, C.int(maxVertexCount))}
+}
+
+func (m *Mesh) ApproximateConvexDecomposition(maxConcavity, backFaceDistanceFactor float32,
+	maxCount, maxVertexPerHull int, reportProgressCallback ReportProgress) *Mesh {
+
+	reportProgress = reportProgressCallback
+	return &Mesh{C.MeshApproximateConvexDecomposition(m.handle, C.dFloat(maxConcavity),
+		C.dFloat(backFaceDistanceFactor), C.int(maxCount), C.int(maxVertexPerHull))}
+
+}

@@ -91,6 +91,13 @@ void UniversalSetUserCallback(NewtonJoint* joint) {
 	NewtonUniversalSetUserCallback(joint, (NewtonUniversalCallback)goUniversalCallback);
 }
 
+NewtonMesh* MeshSimplify(NewtonMesh* mesh, int maxVertextCount) {
+	NewtonMeshSimplify(mesh, maxVertextCount, (NewtonReportProgress)goReportProgress);
+}
+NewtonMesh* MeshApproximateConvexDecomposition(NewtonMesh* mesh, dFloat maxConcavity, dFloat backFaceDistanceFactor, int maxCount, int maxVertexPerHull) {
+	NewtonMeshApproximateConvexDecomposition(mesh, maxConcavity, backFaceDistanceFactor, maxCount, maxVertexPerHull, (NewtonReportProgress)goReportProgress);
+}
+
 //helpers
 void CopyFloatArray(dFloat* src, dFloat* dest, int len) {
 	int i;

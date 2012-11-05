@@ -31,6 +31,7 @@ extern unsigned goHingeCallback(NewtonJoint*,NewtonHingeSliderUpdateDesc*);
 extern unsigned goSliderCallback(NewtonJoint*,NewtonHingeSliderUpdateDesc*); 
 extern unsigned goCorkscrewCallback(NewtonJoint*,NewtonHingeSliderUpdateDesc*); 
 extern unsigned goUniversalCallback(NewtonJoint*,NewtonHingeSliderUpdateDesc*); 
+extern void goReportProgress(dFloat);
 
 void setGetTicksCountCB(NewtonWorld*);
 void setBodyLeaveWorldCB(NewtonWorld*);
@@ -52,8 +53,8 @@ void HingeSetUserCallback(NewtonJoint*);
 void SliderSetUserCallback(NewtonJoint*);
 void CorkscrewSetUserCallback(NewtonJoint*);
 void UniversalSetUserCallback(NewtonJoint*);
-
-
+NewtonMesh* MeshSimplify(NewtonMesh*, int);
+NewtonMesh* MeshApproximateConvexDecomposition(NewtonMesh*, dFloat, dFloat, int, int);
 
 //helpers
 void CopyFloatArray(dFloat*, dFloat*, int); 

@@ -386,7 +386,90 @@ func (m *Mesh) Intersection(clipper *Mesh, clipperMatrix []float32) {
 func (m *Mesh) Clip(clipper *Mesh, clipperMatrix []float32) (topMesh, bottomMesh *Mesh) {
 	topMesh = new(Mesh)
 	bottomMesh = new(Mesh)
-	//fix pointer to pointer
+
 	C.NewtonMeshClip(m.handle, clipper.handle, (*C.dFloat)(&clipperMatrix[0]),
-		topMesh.handle, bottomMesh.handle)
+		(**C.NewtonMesh)(unsafe.Pointer(topMesh.handle)),
+		(**C.NewtonMesh)(unsafe.Pointer(bottomMesh.handle)))
+	return
 }
+
+func (m *Mesh) RemoveUnusedVertices(vertexRemapTable []int) {
+	C.NewtonRemoveUnusedVertices(m.handle, (*C.int)(unsafe.Pointer(&vertexRemapTable[0])))
+}
+
+func (m *Mesh) BeginFace() {
+	C.NewtonMeshBeginFace(m.handle)
+}
+
+func (m *Mesh) AddFace(vertexCount int, vertex []float32, strideInBytes, materialIndex int) {
+	C.NewtonMeshAddFace(m.handle, C.int(vertexCount), (*C.dFloat)(&vertex[0]), C.int(strideInBytes),
+		C.int(materialIndex))
+}
+
+func (m *Mesh) EndFace() {
+	C.NewtonMeshEndFace(m.handle)
+}
+
+func (m *Mesh) BuildFromVertexListIndexList(faceCount int, faceIndexCount, faceMaterialIndex []int,
+	vertex []float32, vertexStrideInBytes int, vertexIndex []int,
+	normal []float32, normalStrideInBytes int, normalIndex []int,
+	uv0 []float32, uv0StrideInBytes int, uv0Index []int,
+	uv1 []float32, uv1StrideInBytes int, uv1Index []int) {
+
+	C.NewtonMeshBuildFromVertexListIndexList(m.handle, C.int(faceCount),
+		(*C.int)(unsafe.Pointer(&faceIndexCount[0])), (*C.int)(unsafe.Pointer(&faceMaterialIndex[0])),
+		(*C.dFloat)(&vertex[0]), C.int(vertexStrideInBytes), (*C.int)(unsafe.Pointer(&vertexIndex[0])),
+		(*C.dFloat)(&normal[0]), C.int(normalStrideInBytes), (*C.int)(unsafe.Pointer(&normalIndex[0])),
+		(*C.dFloat)(&uv0[0]), C.int(uv0StrideInBytes), (*C.int)(unsafe.Pointer(&uv0Index[0])),
+		(*C.dFloat)(&uv1[0]), C.int(uv1StrideInBytes), (*C.int)(unsafe.Pointer(&uv1Index[0])))
+}
+
+func (m *Mesh) VertexStreams(vertexStrideInByte int, vertex []float32,
+	normalStrideInByte int, normal []float32,
+	uv0StrideInByte int, uv0 []float32,
+	uv1StrideInByte int, uv1 []float32) {
+
+	C.NewtonMeshGetVertexStreams(m.handle, C.int(vertexStrideInByte), (*C.dFloat)(&vertex[0]),
+		C.int(normalStrideInByte), (*C.dFloat)(&normal[0]),
+		C.int(uv0StrideInByte), (*C.dFloat)(&uv0[0]),
+		C.int(uv1StrideInByte), (*C.dFloat)(&uv1[0]))
+}
+
+func (m *Mesh) IndirectVertexStreams(vertexStrideInByte int, vertex []float32, vertexIndices []int, vertexCount *int,
+	normalStrideInByte int, normal []float32, normalIndices []int, normalCount *int,
+	uv0StrideInByte int, uv0 []float32, uv0Indices []int, uv0Count *int,
+	uv1StrideInByte int, uv1 []float32, uv1Indices []int, uv1Count *int) {
+	C.NewtonMeshGetIndirectVertexStreams(m.handle,
+		C.int(vertexStrideInByte), (*C.dFloat)(&vertex[0]), (*C.int)(unsafe.Pointer(&vertexIndices[0])),
+		(*C.int)(unsafe.Pointer(vertexCount)),
+		C.int(normalStrideInByte), (*C.dFloat)(&normal[0]), (*C.int)(unsafe.Pointer(&normalIndices[0])),
+		(*C.int)(unsafe.Pointer(normalCount)),
+		C.int(uv0StrideInByte), (*C.dFloat)(&uv0[0]), (*C.int)(unsafe.Pointer(&uv0Indices[0])),
+		(*C.int)(unsafe.Pointer(uv0Count)),
+		C.int(uv1StrideInByte), (*C.dFloat)(&uv1[0]), (*C.int)(unsafe.Pointer(&uv1Indices[0])),
+		(*C.int)(unsafe.Pointer(uv1Count)))
+
+}
+
+/*
+//skip mesh material handle for now. At least until I understand it
+type MeshHandle struct {
+	handle unsafe.Pointer
+	mesh   *Mesh
+}
+
+func (m *Mesh) BeginHandle() *MeshHandle {
+	return &MeshHandle{C.NewtonMeshBeginHandle(m.handle), m}
+}
+
+func (m *Mesh) EndHandle(handle *MeshHandle) {
+	C.NewtonMeshEndHandle(m.handle, handle.handle)
+}
+func (m *Mesh) FirstMaterial(handle MeshHandle) int {
+	return int(C.NewtonMeshFirstMaterial(m.handle, unsafe.Pointer(handle)))
+}
+
+func (m *Mesh) NextMaterial(handle MeshHandle, materialID int) int {
+	return int(C.NewtonMeshNextMaterial(m.handle, unsafe.Pointer(handle), C.int(materialID)))
+}
+*/
