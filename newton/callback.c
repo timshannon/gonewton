@@ -104,6 +104,12 @@ void CopyFloatArray(dFloat* src, dFloat* dest, int len) {
 	for(i = 0; i < len; i++) 
 		dest[i] = src[i];
 }
+void CopyFloat64Array(dFloat64* src, dFloat64* dest, int len) {
+	int i;
+	for(i = 0; i < len; i++) 
+		dest[i] = src[i];
+}
+
 
 void CopyShortArray(short* src, short* dest, int len) {
 	int i;
