@@ -57,7 +57,7 @@ NewtonMesh* MeshSimplify(NewtonMesh*, int);
 NewtonMesh* MeshApproximateConvexDecomposition(NewtonMesh*, dFloat, dFloat, int, int);
 
 //helpers
-void CopyFloatArray(dFloat*, dFloat*, int); 
+void CopyFloat32Array(dFloat*, dFloat*, int); 
 void CopyFloat64Array(dFloat64*, dFloat64*, int); 
 void CopyShortArray(short*, short*, int); 
 #endif //_CALLBACK_H_
