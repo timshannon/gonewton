@@ -99,7 +99,7 @@ NewtonMesh* MeshApproximateConvexDecomposition(NewtonMesh* mesh, dFloat maxConca
 }
 
 //helpers
-void CopyFloatArray(dFloat* src, dFloat* dest, int len) {
+void CopyFloat32Array(dFloat* src, dFloat* dest, int len) {
 	int i;
 	for(i = 0; i < len; i++) 
 		dest[i] = src[i];

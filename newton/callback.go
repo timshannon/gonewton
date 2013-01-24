@@ -30,7 +30,7 @@ func goFloats(cArray *C.dFloat, size int) []float32 {
 	// instead if preformance thrashes with this
 	// Maybe use a temp array stored on the callback owner
 	slice := make([]float32, size)
-	C.CopyFloatArray(cArray, (*C.dFloat)(&slice[0]), C.int(size))
+	C.CopyFloat32Array(cArray, (*C.dFloat)(&slice[0]), C.int(size))
 	return slice
 }
 
