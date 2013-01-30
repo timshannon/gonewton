@@ -150,7 +150,7 @@ func (b *Body) CalculateInverseDynamicsForce(timestep float32, desiredVeloc, for
 }
 
 func (b *Body) SetCentreOfMass(relativeOffset []float32) {
-	C.NewtonBodySetCentreOfMass___(b.handle, (*C.dFloat)(&relativeOffset[0]))
+	C.NewtonBodySetCentreOfMass(b.handle, (*C.dFloat)(&relativeOffset[0]))
 }
 
 func (b *Body) SetMassMatrix(mass, Ixx, Iyy, Izz float32) {
