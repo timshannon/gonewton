@@ -9,12 +9,14 @@ package newton
 #include <stdlib.h>
 */
 import "C"
-import "unsafe"
 
 //used for bools from c interfaces 
 // I'm sure there's a better way to do this, but this works for now
 var gbool = map[int]bool{0: false, 1: true}
 var cint = map[bool]C.int{false: C.int(0), true: C.int(1)}
+
+//Holds user data in go code, so it doesn't get collected
+var ownerData = make(map[owner]interface{})
 
 type World struct {
 	handle *C.NewtonWorld
@@ -125,11 +127,13 @@ func (w *World) DestroyBody(body *Body) {
 }
 
 func (w *World) UserData() interface{} {
-	return (interface{})(C.NewtonWorldGetUserData(w.handle))
+	//return (interface{})(C.NewtonWorldGetUserData(w.handle))
+	return ownerData[owner(w.handle)]
 }
 
 func (w *World) SetUserData(userData interface{}) {
-	C.NewtonWorldSetUserData(w.handle, unsafe.Pointer(&userData))
+	//C.NewtonWorldSetUserData(w.handle, unsafe.Pointer(&userData))
+	ownerData[owner(w.handle)] = userData
 }
 
 func (b *Body) Type() int {
@@ -355,9 +359,11 @@ func (b *Body) NextContactJoint(curJoint *Joint) *Joint {
 }
 
 func (b *Body) UserData() interface{} {
-	return (interface{})(C.NewtonBodyGetUserData(b.handle))
+	return ownerData[owner(b.handle)]
+	//return (interface{})(C.NewtonBodyGetUserData(b.handle))
 }
 
 func (b *Body) SetUserData(userData interface{}) {
-	C.NewtonBodySetUserData(b.handle, unsafe.Pointer(&userData))
+	//C.NewtonBodySetUserData(b.handle, unsafe.Pointer(&userData))
+	ownerData[owner(b.handle)] = userData
 }

@@ -267,11 +267,13 @@ func (c *Collision) UserID() uint {
 
 func (c *Collision) UserData() interface{} {
 	//redirection necessary for handling instanced collisions
-	return (interface{})(C.NewtonCollisionGetUserData(c.handle))
+	//return (interface{})(C.NewtonCollisionGetUserData(c.handle))
+	return ownerData[owner(c.handle)]
 }
 
 func (c *Collision) SetUserData(data interface{}) {
-	C.NewtonCollisionSetUserData(c.handle, unsafe.Pointer(&data))
+	//C.NewtonCollisionSetUserData(c.handle, unsafe.Pointer(&data))
+	ownerData[owner(c.handle)] = data
 }
 
 func (c *Collision) SetMatrix(matrix []float32) {
