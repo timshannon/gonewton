@@ -92,13 +92,13 @@ func (w *World) CreateConvexHullFromMesh(mesh *Mesh, tolerance float32, shapeID 
 
 // Primitive typed methods
 
-func (c *Collision) IsTriggerVolume() bool {
-	return gbool[int(C.NewtonCollisionIsTriggerVolume(c.handle))]
-}
+//func (c *Collision) IsTriggerVolume() bool {
+//return gbool[int(C.NewtonCollisionIsTriggerVolume(c.handle))]
+//}
 
-func (c *Collision) SetIsTriggerVolume(value bool) {
-	C.NewtonCollisionSetAsTriggerVolume(c.handle, cint[value])
-}
+//func (c *Collision) SetIsTriggerVolume(value bool) {
+//C.NewtonCollisionSetAsTriggerVolume(c.handle, cint[value])
+//}
 
 func (c *Collision) FaceIndices(face int, faceIndices []int) int {
 	return int(C.NewtonConvexHullGetFaceIndices(c.handle, C.int(face), (*C.int)(unsafe.Pointer(&faceIndices[0]))))
@@ -234,13 +234,14 @@ func (c *Collision) EndBuild(optimize bool) {
 	C.NewtonTreeCollisionEndBuild(c.handle, cint[optimize])
 }
 
-func (c *Collision) FaceAttribute(faceIndexArray []int) int {
-	return int(C.NewtonTreeCollisionGetFaceAtribute(c.handle, (*C.int)(unsafe.Pointer(&faceIndexArray[0]))))
+func (c *Collision) FaceAttribute(faceIndexArray []int, indexCount int) int {
+	return int(C.NewtonTreeCollisionGetFaceAtribute(c.handle, (*C.int)(unsafe.Pointer(&faceIndexArray[0])),
+		C.int(indexCount)))
 }
 
-func (c *Collision) SetFaceAttribute(faceIndexArray []int, attribute int) {
+func (c *Collision) SetFaceAttribute(faceIndexArray []int, indexCount int, attribute int) {
 	C.NewtonTreeCollisionSetFaceAtribute(c.handle, (*C.int)(unsafe.Pointer(&faceIndexArray[0])),
-		C.int(attribute))
+		C.int(indexCount), C.int(attribute))
 }
 
 //skip for now
