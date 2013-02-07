@@ -219,27 +219,27 @@ func (w *World) CreateTreeCollsionFromMesh(mesh *Mesh, shapeID int) *Collision {
 	return &Collision{handle: C.NewtonCreateTreeCollisionFromMesh(w.handle, mesh.handle, C.int(shapeID))}
 }
 
-func (c *Collision) BeginBuild() {
+func (c *Collision) BeginTreeBuild() {
 	C.NewtonTreeCollisionBeginBuild(c.handle)
 }
 
-func (c *Collision) AddFace(vertexCount int, vertexPtr []float32, strideInBytes, faceAttribute int) {
+func (c *Collision) AddTreeFace(vertexCount int, vertexPtr []float32, strideInBytes, faceAttribute int) {
 	C.NewtonTreeCollisionAddFace(c.handle, C.int(vertexCount), (*C.dFloat)(&vertexPtr[0]), C.int(strideInBytes),
 		C.int(faceAttribute))
 }
 
 //EndBuild ends the building of a Tree collision primative.
 // Optimize should be set to true for concave meshes
-func (c *Collision) EndBuild(optimize bool) {
+func (c *Collision) EndTreeBuild(optimize bool) {
 	C.NewtonTreeCollisionEndBuild(c.handle, cint[optimize])
 }
 
-func (c *Collision) FaceAttribute(faceIndexArray []int, indexCount int) int {
+func (c *Collision) TreeFaceAttribute(faceIndexArray []int, indexCount int) int {
 	return int(C.NewtonTreeCollisionGetFaceAtribute(c.handle, (*C.int)(unsafe.Pointer(&faceIndexArray[0])),
 		C.int(indexCount)))
 }
 
-func (c *Collision) SetFaceAttribute(faceIndexArray []int, indexCount int, attribute int) {
+func (c *Collision) SetTreeFaceAttribute(faceIndexArray []int, indexCount int, attribute int) {
 	C.NewtonTreeCollisionSetFaceAtribute(c.handle, (*C.int)(unsafe.Pointer(&faceIndexArray[0])),
 		C.int(indexCount), C.int(attribute))
 }
