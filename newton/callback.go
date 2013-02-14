@@ -74,11 +74,12 @@ var jointIterator JointIteratorHandler
 func goJointIteratorCB(joint *C.NewtonJoint, userData unsafe.Pointer) {
 	j := &Joint{joint}
 
-	jointIterator(j, (interface{})(userData))
+	jointIterator(j, ownerData[owner(userData)])
 }
 
 func (w *World) ForEachJointDo(f JointIteratorHandler, userData interface{}) {
 	jointIterator = f
+	ownerData[owner(&userData)] = userData
 	C.setJointIteratorCB(w.handle, unsafe.Pointer(&userData))
 }
 
@@ -89,11 +90,12 @@ var bodyIterator BodyIteratorHandler
 //export goBodyIteratorCB
 func goBodyIteratorCB(body *C.NewtonBody, userData unsafe.Pointer) {
 	b := &Body{body}
-	bodyIterator(b, (interface{})(userData))
+	bodyIterator(b, ownerData[owner(userData)])
 }
 
 func (w *World) ForEachBodyInAABBDo(p0, p1 []float32, f BodyIteratorHandler, userData interface{}) {
 	bodyIterator = f
+	ownerData[owner(&userData)] = userData
 	C.setBodyIteratorCB(w.handle, (*C.dFloat)(&p0[0]), (*C.dFloat)(&p1[0]), unsafe.Pointer(&userData))
 }
 
@@ -108,7 +110,7 @@ func goRayFilterCB(body *C.NewtonBody, hitNormal *C.dFloat, collisionID C.int,
 	b := &Body{body}
 
 	return C.dFloat(rayFilter(b, goFloats(hitNormal, 3), int(collisionID),
-		(interface{})(userData), float32(intersectParam)))
+		ownerData[owner(userData)], float32(intersectParam)))
 }
 
 type RayPrefilterHandler func(body *Body, collision *Collision, userData interface{}) uint
@@ -120,13 +122,14 @@ func goRayPrefilterCB(body *C.NewtonBody, collision *C.NewtonCollision, userData
 	b := &Body{body}
 	gCollision := &Collision{collision}
 
-	return C.unsigned(rayPrefilter(b, gCollision, (interface{})(userData)))
+	return C.unsigned(rayPrefilter(b, gCollision, ownerData[owner(userData)]))
 }
 
 func (w *World) RayCast(p0 []float32, p1 []float32, filter RayFilterHandler, userData interface{},
 	prefilter RayPrefilterHandler) {
 	rayFilter = filter
 	rayPrefilter = prefilter
+	ownerData[owner(&userData)] = userData
 	C.RayCast(w.handle, (*C.dFloat)(&p0[0]), (*C.dFloat)(&p1[0]), unsafe.Pointer(&userData))
 }
 
@@ -145,6 +148,8 @@ func (w *World) ConvexCast(matrix []float32, target []float32, shape *Collision,
 	userData interface{}, prefilter RayPrefilterHandler, maxContactsCount int, threadIndex int) []*ConvexCastReturnInfo {
 
 	rayPrefilter = prefilter
+
+	ownerData[owner(&userData)] = userData
 
 	var size int
 	//all of this allocation may be a performance issue
@@ -200,6 +205,7 @@ func goContactsProcessCB(contact *C.NewtonJoint, timestep C.dFloat, threadIndex 
 func (w *World) SetMaterialCollisionCallback(matid0, matid1 int, userData interface{},
 	overlap OnAABBOverlapHandler, contactsProcessor ContactsProcessHandler) {
 	onAABBOverlap = overlap
+	ownerData[owner(&userData)] = userData
 	contactsProcess = contactsProcessor
 	C.SetCollisionCB(w.handle, C.int(matid0), C.int(matid1), unsafe.Pointer(&userData))
 }
@@ -252,7 +258,7 @@ func goCollisionTreeRayCastCallback(body *C.NewtonBody, treeCollision *C.NewtonC
 	col := &Collision{handle: treeCollision}
 
 	return C.dFloat(collisionTreeRayOwners[owner(treeCollision)](b, col, float32(interception), goFloats(normal, 3),
-		int(faceId), (interface{})(userData)))
+		int(faceId), ownerData[owner(userData)]))
 }
 
 func (c *Collision) SetTreeRayCastCallback(callback CollisionTreeRayCastCallback) {
@@ -349,13 +355,15 @@ var getBuoyancyPlane BuoyancyPlaneHandler
 func goBuoyancyPlaneCallback(collisionID C.int, context unsafe.Pointer, globalSpaceMatrix,
 	globalSpacePlane *C.dFloat) C.int {
 
-	return C.int(getBuoyancyPlane(int(collisionID), (interface{})(context), goFloats(globalSpaceMatrix, 16),
+	return C.int(getBuoyancyPlane(int(collisionID), ownerData[owner(context)], goFloats(globalSpaceMatrix, 16),
 		goFloats(globalSpacePlane, 16)))
 }
 
 func (b *Body) AddBuoyancyForce(fluidDensity, fluidLinearViscosity, fluidAngularViscosity float32,
 	gravityVector []float32, buoyancyPlane BuoyancyPlaneHandler, context interface{}) {
 	getBuoyancyPlane = buoyancyPlane
+
+	ownerData[owner(&context)] = context
 
 	C.AddBuoyancyForce(b.handle, C.dFloat(fluidDensity), C.dFloat(fluidLinearViscosity),
 		C.dFloat(fluidAngularViscosity), (*C.dFloat)(&gravityVector[0]), unsafe.Pointer(&context))
@@ -479,4 +487,20 @@ func (m *Mesh) ApproximateConvexDecomposition(maxConcavity, backFaceDistanceFact
 	return &Mesh{C.MeshApproximateConvexDecomposition(m.handle, C.dFloat(maxConcavity),
 		C.dFloat(backFaceDistanceFactor), C.int(maxCount), C.int(maxVertexPerHull))}
 
+}
+
+type CollisionIterator func(userData interface{}, vertexCount int, faceArray []float32, faceID int)
+
+var newtonCollisionIterator CollisionIterator
+
+//export goNewtonCollisionIterator
+func goNewtonCollisionIterator(userData unsafe.Pointer, vertexCount C.int, faceArray *C.dFloat, faceID C.int) {
+	newtonCollisionIterator(ownerData[owner(userData)], int(vertexCount), goFloats(faceArray, int(vertexCount)),
+		int(faceID))
+}
+
+func (c *Collision) ForEachPolygonDo(matrix []float32, callback CollisionIterator, userData interface{}) {
+	newtonCollisionIterator = callback
+	ownerData[owner(&userData)] = userData
+	C.setForEachPolygonDo(c.handle, (*C.dFloat)(&matrix[0]), unsafe.Pointer(&userData))
 }

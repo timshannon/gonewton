@@ -98,6 +98,10 @@ NewtonMesh* MeshApproximateConvexDecomposition(NewtonMesh* mesh, dFloat maxConca
 	NewtonMeshApproximateConvexDecomposition(mesh, maxConcavity, backFaceDistanceFactor, maxCount, maxVertexPerHull, (NewtonReportProgress)goReportProgress);
 }
 
+void setForEachPolygonDo(NewtonCollision* collision, dFloat* matrix, void* userData) {
+	NewtonCollisionForEachPolygonDo(collision, matrix, (NewtonCollisionIterator)goNewtonCollisionIterator, userData);
+}
+
 //helpers
 void CopyFloat32Array(dFloat* src, dFloat* dest, int len) {
 	int i;

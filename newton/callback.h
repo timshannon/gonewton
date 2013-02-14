@@ -32,6 +32,9 @@ extern unsigned goSliderCallback(NewtonJoint*,NewtonHingeSliderUpdateDesc*);
 extern unsigned goCorkscrewCallback(NewtonJoint*,NewtonHingeSliderUpdateDesc*); 
 extern unsigned goUniversalCallback(NewtonJoint*,NewtonHingeSliderUpdateDesc*); 
 extern void goReportProgress(dFloat);
+extern void goNewtonCollisionIterator(void*, int, dFloat*, int); 
+
+
 
 void setGetTicksCountCB(NewtonWorld*);
 void setBodyLeaveWorldCB(NewtonWorld*);
@@ -55,6 +58,7 @@ void CorkscrewSetUserCallback(NewtonJoint*);
 void UniversalSetUserCallback(NewtonJoint*);
 NewtonMesh* MeshSimplify(NewtonMesh*, int);
 NewtonMesh* MeshApproximateConvexDecomposition(NewtonMesh*, dFloat, dFloat, int, int);
+void setForEachPolygonDo(NewtonCollision*, dFloat*, void*);
 
 //helpers
 void CopyFloat32Array(dFloat*, dFloat*, int); 
