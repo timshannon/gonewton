@@ -278,7 +278,7 @@ func goTreeCollisionCallback(bodyWithTreeCollision, body *C.NewtonBody, faceID, 
 	bWithTreeCollision := &Body{bodyWithTreeCollision}
 	b := &Body{body}
 	treeCollisionCallback(bWithTreeCollision, b, int(faceID), int(vertextCount),
-		goFloats(vertex, int(vertextCount)), int(vertexStrideInBytes))
+		goFloats(vertex, int(vertextCount*3)), int(vertexStrideInBytes))
 }
 
 func StaticCollisionSetDebugCallback(staticCollision *Collision, userCallback TreeCollisionCallback) {
@@ -495,7 +495,7 @@ var newtonCollisionIterator CollisionIterator
 
 //export goNewtonCollisionIterator
 func goNewtonCollisionIterator(userData unsafe.Pointer, vertexCount C.int, faceArray *C.dFloat, faceID C.int) {
-	newtonCollisionIterator(ownerData[owner(userData)], int(vertexCount), goFloats(faceArray, int(vertexCount)),
+	newtonCollisionIterator(ownerData[owner(userData)], int(vertexCount), goFloats(faceArray, int(vertexCount*3)),
 		int(faceID))
 }
 
