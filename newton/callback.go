@@ -1,6 +1,6 @@
-// Copyright 2012 Tim Shannon. All rights reserved.  
-// Use of this source code is governed by the MIT license 
-// that can be found in the LICENSE file.  
+// Copyright 2012 Tim Shannon. All rights reserved.
+// Use of this source code is governed by the MIT license
+// that can be found in the LICENSE file.
 package newton
 
 /*
@@ -17,7 +17,7 @@ import (
 //A note on callbacks.  Since C callbacks must basically
 // be hardcoded to one function, I have to do a look up
 // in the function to the proper function pointer based on
-// the limited data in that callback.  
+// the limited data in that callback.
 // callbackOwners will contain a map of functions and their owners
 // so the proper callback can be looked up on the return into Go code
 // using only the owners pointer
@@ -34,12 +34,12 @@ func goFloats(cArray *C.dFloat, size int) []float32 {
 	return slice
 }
 
-type GetTicksCountHandler func() uint
+type GetTicksCountHandler func() uint32
 
 var getTicksCount GetTicksCountHandler
 
 //export goGetTicksCountCB
-func goGetTicksCountCB() uint {
+func goGetTicksCountCB() uint32 {
 	return getTicksCount()
 }
 
