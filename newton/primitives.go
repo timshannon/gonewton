@@ -39,42 +39,42 @@ func (w *World) CreateNull() *Collision {
 	collision := &Collision{handle: C.NewtonCreateNull(w.handle)}
 	return collision
 }
-func (w *World) CreateSphere(radius float32, shapeID int, offsetMatrix []float32) *Collision {
+func (w *World) CreateSphere(radius float32, shapeID int, offsetMatrix *[16]float32) *Collision {
 	return &Collision{handle: C.NewtonCreateSphere(w.handle, C.dFloat(radius), C.int(shapeID),
 		(*C.dFloat)(&offsetMatrix[0]))}
 }
 
-func (w *World) CreateBox(dx, dy, dz float32, shapeID int, offsetMatrix []float32) *Collision {
+func (w *World) CreateBox(dx, dy, dz float32, shapeID int, offsetMatrix *[16]float32) *Collision {
 	return &Collision{handle: C.NewtonCreateBox(w.handle, C.dFloat(dx), C.dFloat(dy), C.dFloat(dz), C.int(shapeID),
 		(*C.dFloat)(&offsetMatrix[0]))}
 }
 
-func (w *World) CreateCone(radius, height float32, shapeID int, offsetMatrix []float32) *Collision {
+func (w *World) CreateCone(radius, height float32, shapeID int, offsetMatrix *[16]float32) *Collision {
 	return &Collision{handle: C.NewtonCreateCone(w.handle, C.dFloat(radius), C.dFloat(height), C.int(shapeID),
 		(*C.dFloat)(&offsetMatrix[0]))}
 }
 
-func (w *World) CreateCapsule(radius, height float32, shapeID int, offsetMatrix []float32) *Collision {
+func (w *World) CreateCapsule(radius, height float32, shapeID int, offsetMatrix *[16]float32) *Collision {
 	return &Collision{handle: C.NewtonCreateCapsule(w.handle, C.dFloat(radius), C.dFloat(height), C.int(shapeID),
 		(*C.dFloat)(&offsetMatrix[0]))}
 }
 
-func (w *World) CreateCylinder(radius, height float32, shapeID int, offsetMatrix []float32) *Collision {
+func (w *World) CreateCylinder(radius, height float32, shapeID int, offsetMatrix *[16]float32) *Collision {
 	return &Collision{handle: C.NewtonCreateCylinder(w.handle, C.dFloat(radius), C.dFloat(height), C.int(shapeID),
 		(*C.dFloat)(&offsetMatrix[0]))}
 }
 
-func (w *World) CreateTaperedCapsule(radio0, radio1, height float32, shapeID int, offsetMatrix []float32) *Collision {
+func (w *World) CreateTaperedCapsule(radio0, radio1, height float32, shapeID int, offsetMatrix *[16]float32) *Collision {
 	return &Collision{handle: C.NewtonCreateTaperedCapsule(w.handle, C.dFloat(radio0), C.dFloat(radio1),
 		C.dFloat(height), C.int(shapeID), (*C.dFloat)(&offsetMatrix[0]))}
 }
 
-func (w *World) CreateTaperedCylinder(radio0, radio1, height float32, shapeID int, offsetMatrix []float32) *Collision {
+func (w *World) CreateTaperedCylinder(radio0, radio1, height float32, shapeID int, offsetMatrix *[16]float32) *Collision {
 	return &Collision{handle: C.NewtonCreateTaperedCylinder(w.handle, C.dFloat(radio0), C.dFloat(radio1),
 		C.dFloat(height), C.int(shapeID), (*C.dFloat)(&offsetMatrix[0]))}
 }
 
-func (w *World) CreateChamferCylinder(radius, height float32, shapeID int, offsetMatrix []float32) *Collision {
+func (w *World) CreateChamferCylinder(radius, height float32, shapeID int, offsetMatrix *[16]float32) *Collision {
 	return &Collision{handle: C.NewtonCreateChamferCylinder(w.handle, C.dFloat(radius), C.dFloat(height),
 		C.int(shapeID), (*C.dFloat)(&offsetMatrix[0]))}
 }
@@ -108,7 +108,7 @@ func (c *Collision) CalculateVolume() float32 {
 	return float32(C.NewtonConvexCollisionCalculateVolume(c.handle))
 }
 
-func (c *Collision) CalculateInertialMatrix(intertia, origin []float32) {
+func (c *Collision) CalculateInertialMatrix(intertia, origin *[3]float32) {
 	C.NewtonConvexCollisionCalculateInertialMatrix(c.handle, (*C.dFloat)(&intertia[0]),
 		(*C.dFloat)(&origin[0]))
 }
@@ -148,7 +148,7 @@ func (c *Collision) CompoundRemoveSubCollisionByIndex(index int) {
 	C.NewtonCompoundCollisionRemoveSubCollisionByIndex(c.handle, C.int(index))
 }
 
-func (c *Collision) SetSubCollisionMatrix(collisionNode *Node, matrix []float32) {
+func (c *Collision) SetSubCollisionMatrix(collisionNode *Node, matrix *[16]float32) {
 	C.NewtonCompoundCollisionSetSubCollisionMatrix(c.handle, collisionNode.handle,
 		(*C.dFloat)(&matrix[0]))
 }
@@ -193,7 +193,7 @@ func (c *Collision) SceneAddSubCollision(subCollision *Collision) *Node {
 	return &Node{C.NewtonSceneCollisionAddSubCollision(c.handle, subCollision.handle)}
 }
 
-func (c *Collision) SceneSetSubCollisionMatrix(collisionNode *Node, matrix []float32) {
+func (c *Collision) SceneSetSubCollisionMatrix(collisionNode *Node, matrix *[16]float32) {
 	C.NewtonSceneCollisionSetSubCollisionMatrix(c.handle, collisionNode.handle,
 		(*C.dFloat)(&matrix[0]))
 }
@@ -245,7 +245,7 @@ func (c *Collision) SetTreeFaceAttribute(faceIndexArray []int, indexCount int, a
 }
 
 //skip for now
-//func (c *Collision) VertexListIndexListInAABB(p0, p1 []float32, vertexAray []int, 
+//func (c *Collision) VertexListIndexListInAABB(p0, p1 []float32, vertexAray []int,
 
 //General Purpose collision library functions
 
@@ -276,11 +276,11 @@ func (c *Collision) SetUserData(data interface{}) {
 	ownerData[owner(c.handle)] = data
 }
 
-func (c *Collision) SetMatrix(matrix []float32) {
+func (c *Collision) SetMatrix(matrix *[16]float32) {
 	C.NewtonCollisionSetMatrix(c.handle, (*C.dFloat)(&matrix[0]))
 }
 
-func (c *Collision) Matrix(matrix []float32) {
+func (c *Collision) Matrix(matrix *[16]float32) {
 	C.NewtonCollisionGetMatrix(c.handle, (*C.dFloat)(&matrix[0]))
 }
 
@@ -334,11 +334,11 @@ func (m *Mesh) Destroy() {
 	C.NewtonMeshDestroy(m.handle)
 }
 
-func (m *Mesh) ApplyTransform(matrix []float32) {
+func (m *Mesh) ApplyTransform(matrix *[16]float32) {
 	C.NewtonMesApplyTransform(m.handle, (*C.dFloat)(&matrix[0]))
 }
 
-func (m *Mesh) CalculateOOBB(matrix []float32, x, y, z *float32) {
+func (m *Mesh) CalculateOOBB(matrix *[16]float32, x, y, z *float32) {
 	C.NewtonMeshCalculateOOBB(m.handle, (*C.dFloat)(&matrix[0]), (*C.dFloat)(x),
 		(*C.dFloat)(y), (*C.dFloat)(z))
 }
@@ -375,19 +375,19 @@ func (m *Mesh) Triangulate() {
 	C.NewtonMeshTriangulate(m.handle)
 }
 
-func (m *Mesh) Union(clipper *Mesh, clipperMatrix []float32) {
+func (m *Mesh) Union(clipper *Mesh, clipperMatrix *[16]float32) {
 	C.NewtonMeshUnion(m.handle, clipper.handle, (*C.dFloat)(&clipperMatrix[0]))
 }
 
-func (m *Mesh) Difference(clipper *Mesh, clipperMatrix []float32) {
+func (m *Mesh) Difference(clipper *Mesh, clipperMatrix *[16]float32) {
 	C.NewtonMeshDifference(m.handle, clipper.handle, (*C.dFloat)(&clipperMatrix[0]))
 }
 
-func (m *Mesh) Intersection(clipper *Mesh, clipperMatrix []float32) {
+func (m *Mesh) Intersection(clipper *Mesh, clipperMatrix *[16]float32) {
 	C.NewtonMeshIntersection(m.handle, clipper.handle, (*C.dFloat)(&clipperMatrix[0]))
 }
 
-func (m *Mesh) Clip(clipper *Mesh, clipperMatrix []float32) (topMesh, bottomMesh *Mesh) {
+func (m *Mesh) Clip(clipper *Mesh, clipperMatrix *[16]float32) (topMesh, bottomMesh *Mesh) {
 	topMesh = new(Mesh)
 	bottomMesh = new(Mesh)
 

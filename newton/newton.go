@@ -1,6 +1,6 @@
-// Copyright 2012 Tim Shannon. All rights reserved.  
-// Use of this source code is governed by the MIT license 
-// that can be found in the LICENSE file.  
+// Copyright 2012 Tim Shannon. All rights reserved.
+// Use of this source code is governed by the MIT license
+// that can be found in the LICENSE file.
 package newton
 
 /*
@@ -10,8 +10,7 @@ package newton
 */
 import "C"
 
-//used for bools from c interfaces 
-// I'm sure there's a better way to do this, but this works for now
+//used for bools from c interfaces
 var gbool = map[int]bool{0: false, 1: true}
 var cint = map[bool]C.int{false: C.int(0), true: C.int(1)}
 
@@ -94,7 +93,7 @@ func (w *World) NextBody(curBody *Body) *Body {
 }
 
 //Low level standalone collision todo later
-//func (w *World) CollisionPointDistance(point []float32, collision *Collision, 
+//func (w *World) CollisionPointDistance(point []float32, collision *Collision,
 
 //Not implementing transforms utilty functions
 
@@ -114,11 +113,11 @@ const (
 	BodyDeformable
 )
 
-func (w *World) CreateDynamicBody(collision *Collision, matrix []float32) *Body {
+func (w *World) CreateDynamicBody(collision *Collision, matrix *[16]float32) *Body {
 	return &Body{C.NewtonCreateDynamicBody(w.handle, collision.handle, (*C.dFloat)(&matrix[0]))}
 }
 
-func (w *World) CreateKinematicBody(collision *Collision, matrix []float32) *Body {
+func (w *World) CreateKinematicBody(collision *Collision, matrix *[16]float32) *Body {
 	return &Body{C.NewtonCreateKinematicBody(w.handle, collision.handle, (*C.dFloat)(&matrix[0]))}
 }
 
@@ -140,20 +139,20 @@ func (b *Body) Type() int {
 	return int(C.NewtonBodyGetType(b.handle))
 }
 
-func (b *Body) AddForce(force []float32) {
+func (b *Body) AddForce(force *[3]float32) {
 	C.NewtonBodyAddForce(b.handle, (*C.dFloat)(&force[0]))
 }
 
-func (b *Body) AddTorque(torque []float32) {
+func (b *Body) AddTorque(torque *[3]float32) {
 	C.NewtonBodyAddTorque(b.handle, (*C.dFloat)(&torque[0]))
 }
 
-func (b *Body) CalculateInverseDynamicsForce(timestep float32, desiredVeloc, forceOut []float32) {
+func (b *Body) CalculateInverseDynamicsForce(timestep float32, desiredVeloc, forceOut *[3]float32) {
 	C.NewtonBodyCalculateInverseDynamicsForce(b.handle, C.dFloat(timestep), (*C.dFloat)(&desiredVeloc[0]),
 		(*C.dFloat)(&forceOut[0]))
 }
 
-func (b *Body) SetCentreOfMass(relativeOffset []float32) {
+func (b *Body) SetCentreOfMass(relativeOffset *[3]float32) {
 	C.NewtonBodySetCentreOfMass(b.handle, (*C.dFloat)(&relativeOffset[0]))
 }
 
@@ -165,11 +164,11 @@ func (b *Body) SetMassProperties(mass float32, collision *Collision) {
 	C.NewtonBodySetMassProperties(b.handle, C.dFloat(mass), collision.handle)
 }
 
-func (b *Body) SetMatrix(matrix []float32) {
+func (b *Body) SetMatrix(matrix *[16]float32) {
 	C.NewtonBodySetMatrix(b.handle, (*C.dFloat)(&matrix[0]))
 }
 
-func (b *Body) SetMatrixRecursive(matrix []float32) {
+func (b *Body) SetMatrixRecursive(matrix *[16]float32) {
 	C.NewtonBodySetMatrixRecursive(b.handle, (*C.dFloat)(&matrix[0]))
 }
 
@@ -185,19 +184,19 @@ func (b *Body) SetJointRecursiveCollision(state uint) {
 	C.NewtonBodySetJointRecursiveCollision(b.handle, C.uint(state))
 }
 
-func (b *Body) SetOmega(omega []float32) {
+func (b *Body) SetOmega(omega *[3]float32) {
 	C.NewtonBodySetOmega(b.handle, (*C.dFloat)(&omega[0]))
 }
 
-func (b *Body) SetVelocity(velocity []float32) {
+func (b *Body) SetVelocity(velocity *[3]float32) {
 	C.NewtonBodySetVelocity(b.handle, (*C.dFloat)(&velocity[0]))
 }
 
-func (b *Body) SetForce(force []float32) {
+func (b *Body) SetForce(force *[3]float32) {
 	C.NewtonBodySetForce(b.handle, (*C.dFloat)(&force[0]))
 }
 
-func (b *Body) SetTorque(torque []float32) {
+func (b *Body) SetTorque(torque *[3]float32) {
 	C.NewtonBodySetTorque(b.handle, (*C.dFloat)(&torque[0]))
 }
 
@@ -205,7 +204,7 @@ func (b *Body) SetLinearDamping(linearDamp float32) {
 	C.NewtonBodySetLinearDamping(b.handle, C.dFloat(linearDamp))
 }
 
-func (b *Body) SetAngularDamping(angularDamp []float32) {
+func (b *Body) SetAngularDamping(angularDamp *[3]float32) {
 	C.NewtonBodySetAngularDamping(b.handle, (*C.dFloat)(&angularDamp[0]))
 }
 
@@ -263,12 +262,12 @@ func (b *Body) JointRecursiveCollision() int {
 	return int(C.NewtonBodyGetJointRecursiveCollision(b.handle))
 }
 
-func (b *Body) Matrix(matrix []float32) {
+func (b *Body) Matrix(matrix *[16]float32) {
 	C.NewtonBodyGetMatrix(b.handle, (*C.dFloat)(&matrix[0]))
 }
 
 //Rotation gets the Quaternion (4) floats
-func (b *Body) Rotation(rotation []float32) {
+func (b *Body) Rotation(rotation *[16]float32) {
 	C.NewtonBodyGetRotation(b.handle, (*C.dFloat)(&rotation[0]))
 }
 
@@ -282,47 +281,47 @@ func (b *Body) InvMass(invMass, invIxx, invIyy, invIzz *float32) {
 		(*C.dFloat)(invIyy), (*C.dFloat)(invIzz))
 }
 
-func (b *Body) InertiaMatrix(inertiaMatrix []float32) {
+func (b *Body) InertiaMatrix(inertiaMatrix *[16]float32) {
 	C.NewtonBodyGetInertiaMatrix(b.handle, (*C.dFloat)(&inertiaMatrix[0]))
 }
 
-func (b *Body) InvInertiaMatrix(invInertiaMatrix []float32) {
+func (b *Body) InvInertiaMatrix(invInertiaMatrix *[16]float32) {
 	C.NewtonBodyGetInvInertiaMatrix(b.handle, (*C.dFloat)(&invInertiaMatrix[0]))
 }
 
-func (b *Body) Omega(vector []float32) {
+func (b *Body) Omega(vector *[3]float32) {
 	C.NewtonBodyGetOmega(b.handle, (*C.dFloat)(&vector[0]))
 }
 
-func (b *Body) Velocity(vector []float32) {
+func (b *Body) Velocity(vector *[3]float32) {
 	C.NewtonBodyGetVelocity(b.handle, (*C.dFloat)(&vector[0]))
 }
 
-func (b *Body) Force(vector []float32) {
+func (b *Body) Force(vector *[3]float32) {
 	C.NewtonBodyGetForce(b.handle, (*C.dFloat)(&vector[0]))
 }
 
-func (b *Body) Torque(vector []float32) {
+func (b *Body) Torque(vector *[3]float32) {
 	C.NewtonBodyGetTorque(b.handle, (*C.dFloat)(&vector[0]))
 }
 
-func (b *Body) ForceAcc(vector []float32) {
+func (b *Body) ForceAcc(vector *[3]float32) {
 	C.NewtonBodyGetForceAcc(b.handle, (*C.dFloat)(&vector[0]))
 }
 
-func (b *Body) TorqueAcc(vector []float32) {
+func (b *Body) TorqueAcc(vector *[3]float32) {
 	C.NewtonBodyGetTorqueAcc(b.handle, (*C.dFloat)(&vector[0]))
 }
 
-func (b *Body) CentreOfMass(com []float32) {
+func (b *Body) CentreOfMass(com *[3]float32) {
 	C.NewtonBodyGetCentreOfMass(b.handle, (*C.dFloat)(&com[0]))
 }
 
-func (b *Body) AddImpulse(pointDeltaVeloc, pointPosit []float32) {
+func (b *Body) AddImpulse(pointDeltaVeloc, pointPosit *[3]float32) {
 	C.NewtonBodyAddImpulse(b.handle, (*C.dFloat)(&pointDeltaVeloc[0]), (*C.dFloat)(&pointPosit[0]))
 }
 
-func (b *Body) ApplyImpulsePair(linearImpulse, angularImpulse []float32) {
+func (b *Body) ApplyImpulsePair(linearImpulse, angularImpulse *[3]float32) {
 	C.NewtonBodyApplyImpulsePair(b.handle, (*C.dFloat)(&linearImpulse[0]), (*C.dFloat)(&angularImpulse[0]))
 }
 
@@ -334,11 +333,11 @@ func (b *Body) LinearDamping() float32 {
 	return float32(C.NewtonBodyGetLinearDamping(b.handle))
 }
 
-func (b *Body) AngularDamping(result []float32) {
+func (b *Body) AngularDamping(result *[3]float32) {
 	C.NewtonBodyGetAngularDamping(b.handle, (*C.dFloat)(&result[0]))
 }
 
-func (b *Body) AABB(p0, p1 []float32) {
+func (b *Body) AABB(p0, p1 *[3]float32) {
 	C.NewtonBodyGetAABB(b.handle, (*C.dFloat)(&p0[0]), (*C.dFloat)(&p1[0]))
 }
 
