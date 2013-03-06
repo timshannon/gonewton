@@ -1,6 +1,6 @@
-// Copyright 2012 Tim Shannon. All rights reserved.  
-// Use of this source code is governed by the MIT license 
-// that can be found in the LICENSE file.  
+// Copyright 2012 Tim Shannon. All rights reserved.
+// Use of this source code is governed by the MIT license
+// that can be found in the LICENSE file.
 package newton
 
 /*
@@ -49,15 +49,15 @@ func (j *Joint) Body1() *Body {
 }
 
 type JointRecord struct {
-	AttachmentMatrix0 [][]float32
-	AttachmentMatrix1 [][]float32
-	MinLinearDof      []float32
-	MaxLinearDof      []float32
-	MinAngularDof     []float32
-	MaxAngularDof     []float32
+	AttachmentMatrix0 *[16]float32
+	AttachmentMatrix1 *[16]float32
+	MinLinearDof      *[3]float32
+	MaxLinearDof      *[3]float32
+	MinAngularDof     *[3]float32
+	MaxAngularDof     *[3]float32
 	AttachBody0       *Body
 	AttachBody1       *Body
-	ExtraParameters   []float32
+	ExtraParameters   *[16]float32
 	BodiesCollisionOn int
 	DescriptionType   string
 }
@@ -69,13 +69,13 @@ func (j *Joint) Info() *JointRecord {
 	return &JointRecord{
 		AttachmentMatrix0: get4x4Float(cInfo.m_attachmenMatrix_0),
 		AttachmentMatrix1: get4x4Float(cInfo.m_attachmenMatrix_1),
-		MinLinearDof:      goFloats(&cInfo.m_minLinearDof[0], 3),
-		MaxLinearDof:      goFloats(&cInfo.m_maxLinearDof[0], 3),
-		MinAngularDof:     goFloats(&cInfo.m_minAngularDof[0], 3),
-		MaxAngularDof:     goFloats(&cInfo.m_maxAngularDof[0], 3),
+		MinLinearDof:      go3Floats(&cInfo.m_minLinearDof[0]),
+		MaxLinearDof:      go3Floats(&cInfo.m_maxLinearDof[0]),
+		MinAngularDof:     go3Floats(&cInfo.m_minAngularDof[0]),
+		MaxAngularDof:     go3Floats(&cInfo.m_maxAngularDof[0]),
 		AttachBody0:       &Body{cInfo.m_attachBody_0},
 		AttachBody1:       &Body{cInfo.m_attachBody_1},
-		ExtraParameters:   goFloats(&cInfo.m_extraParameters[0], 16),
+		ExtraParameters:   go16Floats(&cInfo.m_extraParameters[0]),
 		BodiesCollisionOn: int(cInfo.m_bodiesCollisionOn),
 		DescriptionType:   C.GoString(&cInfo.m_descriptionType[0]),
 	}
@@ -83,14 +83,14 @@ func (j *Joint) Info() *JointRecord {
 
 //Untested, not sure why original lib switched to 4x4 arrays from
 // [16]arrays for matrices
-func get4x4Float(array [4][4]C.dFloat) [][]float32 {
-	slice := make([][]float32, 4)
-
-	for i := range slice {
-		slice[i] = goFloats(&array[i][0], 4)
+func get4x4Float(array [4][4]C.dFloat) *[16]float32 {
+	gArray := [16]float32{}
+	for i := 0; i < 4; i++ {
+		slice := gArray[i : i+4]
+		C.CopyFloat32Array(&array[i][0], (*C.dFloat)(&slice[0]), C.int(4))
 	}
 
-	return slice
+	return &gArray
 }
 
 func (j *Joint) CollisionState() int {
@@ -113,7 +113,7 @@ func (w *World) DestroyJoint(joint *Joint) {
 	C.NewtonDestroyJoint(w.handle, joint.handle)
 }
 
-//Particle Systems interface (soft bodies, pressure bodies, and cloth)  
+//Particle Systems interface (soft bodies, pressure bodies, and cloth)
 
 type DeformableMeshSegment struct {
 	handle          *C.NewtonDeformableMeshSegment
@@ -136,7 +136,7 @@ func (c *Collision) SetDeformableMeshSkinThickness(skinThickness float32) {
 	C.NewtonDeformableMeshSetSkinThickness(c.handle, C.dFloat(skinThickness))
 }
 
-func (w *World) CreateDeformableBody(deformableMesh *Collision, matrix []float32) *Body {
+func (w *World) CreateDeformableBody(deformableMesh *Collision, matrix *[16]float32) *Body {
 	return &Body{C.NewtonCreateDeformableBody(w.handle, deformableMesh.handle,
 		(*C.dFloat)(&matrix[0]))}
 }
@@ -180,24 +180,24 @@ func (segment *DeformableMeshSegment) IndexList(result []int) {
 
 //Ball and Socket Joint
 
-func (w *World) CreateBall(pivotPoint []float32, child, parent *Body) *Joint {
+func (w *World) CreateBall(pivotPoint *[3]float32, child, parent *Body) *Joint {
 	return &Joint{C.NewtonConstraintCreateBall(w.handle, (*C.dFloat)(&pivotPoint[0]),
 		child.handle, parent.handle)}
 }
 
-func (j *Joint) BallJointAngle(angle []float32) {
+func (j *Joint) BallJointAngle(angle *[3]float32) {
 	C.NewtonBallGetJointAngle(j.handle, (*C.dFloat)(&angle[0]))
 }
 
-func (j *Joint) BallJointOmega(omega []float32) {
+func (j *Joint) BallJointOmega(omega *[3]float32) {
 	C.NewtonBallGetJointOmega(j.handle, (*C.dFloat)(&omega[0]))
 }
 
-func (j *Joint) BallJointForce(force []float32) {
+func (j *Joint) BallJointForce(force *[3]float32) {
 	C.NewtonBallGetJointForce(j.handle, (*C.dFloat)(&force[0]))
 }
 
-func (j *Joint) SetBallConeLimits(pin []float32, maxConeAngle, maxTwistAngle float32) {
+func (j *Joint) SetBallConeLimits(pin *[3]float32, maxConeAngle, maxTwistAngle float32) {
 	C.NewtonBallSetConeLimits(j.handle, (*C.dFloat)(&pin[0]), C.dFloat(maxConeAngle),
 		C.dFloat(maxTwistAngle))
 }
@@ -224,7 +224,7 @@ func (d *HingeSliderUpdateDesc) Timestep() float32 {
 	return float32(d.handle.m_timestep)
 }
 
-func (w *World) CreateHinge(pivotPoint, pinDir []float32, child, parent *Body) *Joint {
+func (w *World) CreateHinge(pivotPoint, pinDir *[3]float32, child, parent *Body) *Joint {
 	return &Joint{C.NewtonConstraintCreateHinge(w.handle, (*C.dFloat)(&pivotPoint[0]),
 		(*C.dFloat)(&pinDir[0]), child.handle, parent.handle)}
 }
@@ -237,7 +237,7 @@ func (j *Joint) HingeJointOmega() float32 {
 	return float32(C.NewtonHingeGetJointOmega(j.handle))
 }
 
-func (j *Joint) HingeJointForce(force []float32) {
+func (j *Joint) HingeJointForce(force *[3]float32) {
 	C.NewtonHingeGetJointForce(j.handle, (*C.dFloat)(&force[0]))
 }
 
@@ -247,7 +247,7 @@ func (j *Joint) HingeCalculateStopAlpha(desc *HingeSliderUpdateDesc, angle float
 
 //Slider Joint
 
-func (w *World) CreateSlider(pivotPoint, pinDir []float32, child, parent *Body) *Joint {
+func (w *World) CreateSlider(pivotPoint, pinDir *[3]float32, child, parent *Body) *Joint {
 	return &Joint{C.NewtonConstraintCreateSlider(w.handle, (*C.dFloat)(&pivotPoint[0]),
 		(*C.dFloat)(&pinDir[0]), child.handle, parent.handle)}
 }
@@ -260,7 +260,7 @@ func (j *Joint) SliderJointVeloc() float32 {
 	return float32(C.NewtonSliderGetJointVeloc(j.handle))
 }
 
-func (j *Joint) SliderJointForce(force []float32) {
+func (j *Joint) SliderJointForce(force *[3]float32) {
 	C.NewtonSliderGetJointForce(j.handle, (*C.dFloat)(&force[0]))
 }
 
@@ -270,7 +270,7 @@ func (j *Joint) SliderCalculateStopAccel(desc *HingeSliderUpdateDesc, position f
 
 //Corkscrew Joint
 
-func (w *World) CreateCorkscrew(pivotPoint, pinDir []float32, child, parent *Body) *Joint {
+func (w *World) CreateCorkscrew(pivotPoint, pinDir *[3]float32, child, parent *Body) *Joint {
 	return &Joint{C.NewtonConstraintCreateCorkscrew(w.handle, (*C.dFloat)(&pivotPoint[0]),
 		(*C.dFloat)(&pinDir[0]), child.handle, parent.handle)}
 }
@@ -291,7 +291,7 @@ func (j *Joint) CorkscrewJointOmega() float32 {
 	return float32(C.NewtonCorkscrewGetJointOmega(j.handle))
 }
 
-func (j *Joint) CorkscrewJointForce(force []float32) {
+func (j *Joint) CorkscrewJointForce(force *[3]float32) {
 	C.NewtonCorkscrewGetJointForce(j.handle, (*C.dFloat)(&force[0]))
 }
 
@@ -305,7 +305,7 @@ func (j *Joint) CorkscrewCalculateStopAlpha(desc *HingeSliderUpdateDesc, angle f
 
 //Univeral Joint
 
-func (w *World) CreateUniversal(pivotPoint, pinDir0, pinDir1 []float32, child, parent *Body) *Joint {
+func (w *World) CreateUniversal(pivotPoint, pinDir0, pinDir1 *[3]float32, child, parent *Body) *Joint {
 	return &Joint{C.NewtonConstraintCreateUniversal(w.handle, (*C.dFloat)(&pivotPoint[0]),
 		(*C.dFloat)(&pinDir0[0]), (*C.dFloat)(&pinDir1[0]), child.handle, parent.handle)}
 }
@@ -326,7 +326,7 @@ func (j *Joint) UniversalJointOmega1() float32 {
 	return float32(C.NewtonUniversalGetJointOmega1(j.handle))
 }
 
-func (j *Joint) UniversalJointForce(force []float32) {
+func (j *Joint) UniversalJointForce(force *[3]float32) {
 	C.NewtonUniversalGetJointForce(j.handle, (*C.dFloat)(&force[0]))
 }
 
@@ -339,15 +339,15 @@ func (j *Joint) UniversalCalculateStopAlpha1(desc *HingeSliderUpdateDesc, angle 
 }
 
 //Up Vector Joint
-func (w *World) CreateUpVector(pinDir []float32, body *Body) *Joint {
+func (w *World) CreateUpVector(pinDir *[3]float32, body *Body) *Joint {
 	return &Joint{C.NewtonConstraintCreateUpVector(w.handle, (*C.dFloat)(&pinDir[0]),
 		body.handle)}
 }
 
-func (j *Joint) UpVectorPin(pinDir []float32) {
+func (j *Joint) UpVectorPin(pinDir *[3]float32) {
 	C.NewtonUpVectorGetPin(j.handle, (*C.dFloat)(&pinDir[0]))
 }
 
-func (j *Joint) UpVectorSetPin(pinDir []float32) {
+func (j *Joint) UpVectorSetPin(pinDir *[3]float32) {
 	C.NewtonUpVectorSetPin(j.handle, (*C.dFloat)(&pinDir[0]))
 }

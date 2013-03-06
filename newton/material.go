@@ -1,6 +1,6 @@
-// Copyright 2012 Tim Shannon. All rights reserved.  
-// Use of this source code is governed by the MIT license 
-// that can be found in the LICENSE file.  
+// Copyright 2012 Tim Shannon. All rights reserved.
+// Use of this source code is governed by the MIT license
+// that can be found in the LICENSE file.
 package newton
 
 /*
@@ -72,16 +72,16 @@ func (m *Material) ContactNormalSpeed() float32 {
 	return float32(C.NewtonMaterialGetContactNormalSpeed(m.handle))
 }
 
-func (m *Material) ContactForce(body *Body, force []float32) {
+func (m *Material) ContactForce(body *Body, force *[3]float32) {
 	C.NewtonMaterialGetContactForce(m.handle, body.handle, (*C.dFloat)(&force[0]))
 }
 
-func (m *Material) ContactPositionAndNormal(body *Body, position, normal []float32) {
+func (m *Material) ContactPositionAndNormal(body *Body, position, normal *[3]float32) {
 	C.NewtonMaterialGetContactPositionAndNormal(m.handle, body.handle, (*C.dFloat)(&position[0]),
 		(*C.dFloat)(&normal[0]))
 }
 
-func (m *Material) ContactTangentDirections(body *Body, dir0, dir1 []float32) {
+func (m *Material) ContactTangentDirections(body *Body, dir0, dir1 *[3]float32) {
 	C.NewtonMaterialGetContactTangentDirections(m.handle, body.handle, (*C.dFloat)(&dir0[0]),
 		(*C.dFloat)(&dir1[0]))
 }
@@ -111,7 +111,7 @@ func (m *Material) SetContactNormalAcceleration(accel float32) {
 	C.NewtonMaterialSetContactNormalAcceleration(m.handle, C.dFloat(accel))
 }
 
-func (m *Material) SetContactNormalDirection(directionVector []float32) {
+func (m *Material) SetContactNormalDirection(directionVector *[3]float32) {
 	C.NewtonMaterialSetContactNormalDirection(m.handle, (*C.dFloat)(&directionVector[0]))
 }
 
@@ -119,6 +119,6 @@ func (m *Material) SetContactTangentAcceleration(accel float32, index int) {
 	C.NewtonMaterialSetContactTangentAcceleration(m.handle, C.dFloat(accel), C.int(index))
 }
 
-func (m *Material) ContactRotateTangentDirections(directionVector []float32) {
+func (m *Material) ContactRotateTangentDirections(directionVector *[3]float32) {
 	C.NewtonMaterialContactRotateTangentDirections(m.handle, (*C.dFloat)(&directionVector[0]))
 }

@@ -34,6 +34,30 @@ func goFloats(cArray *C.dFloat, size int) []float32 {
 	return slice
 }
 
+func go16Floats(cArray *C.dFloat) *[16]float32 {
+	gArray := [16]float32{}
+
+	C.CopyFloat32Array(cArray, (*C.dFloat)(&gArray[0]), C.int(16))
+
+	return &gArray
+}
+
+func go3Floats(cArray *C.dFloat) *[3]float32 {
+	gArray := [3]float32{}
+
+	C.CopyFloat32Array(cArray, (*C.dFloat)(&gArray[0]), C.int(3))
+
+	return &gArray
+}
+
+func go4Floats(cArray *C.dFloat) *[4]float32 {
+	gArray := [4]float32{}
+
+	C.CopyFloat32Array(cArray, (*C.dFloat)(&gArray[0]), C.int(4))
+
+	return &gArray
+}
+
 type GetTicksCountHandler func() uint32
 
 var getTicksCount GetTicksCountHandler
@@ -93,13 +117,13 @@ func goBodyIteratorCB(body *C.NewtonBody, userData unsafe.Pointer) {
 	bodyIterator(b, ownerData[owner(userData)])
 }
 
-func (w *World) ForEachBodyInAABBDo(p0, p1 []float32, f BodyIteratorHandler, userData interface{}) {
+func (w *World) ForEachBodyInAABBDo(p0, p1 *[3]float32, f BodyIteratorHandler, userData interface{}) {
 	bodyIterator = f
 	ownerData[owner(&userData)] = userData
 	C.setBodyIteratorCB(w.handle, (*C.dFloat)(&p0[0]), (*C.dFloat)(&p1[0]), unsafe.Pointer(&userData))
 }
 
-type RayFilterHandler func(body *Body, hitNormal []float32, collisionID int,
+type RayFilterHandler func(body *Body, hitNormal *[3]float32, collisionID int,
 	userData interface{}, intersectParam float32) float32
 
 var rayFilter RayFilterHandler
@@ -109,7 +133,7 @@ func goRayFilterCB(body *C.NewtonBody, hitNormal *C.dFloat, collisionID C.int,
 	userData unsafe.Pointer, intersectParam C.dFloat) C.dFloat {
 	b := &Body{body}
 
-	return C.dFloat(rayFilter(b, goFloats(hitNormal, 3), int(collisionID),
+	return C.dFloat(rayFilter(b, go3Floats(hitNormal), int(collisionID),
 		ownerData[owner(userData)], float32(intersectParam)))
 }
 
@@ -125,7 +149,7 @@ func goRayPrefilterCB(body *C.NewtonBody, collision *C.NewtonCollision, userData
 	return C.unsigned(rayPrefilter(b, gCollision, ownerData[owner(userData)]))
 }
 
-func (w *World) RayCast(p0 []float32, p1 []float32, filter RayFilterHandler, userData interface{},
+func (w *World) RayCast(p0 *[3]float32, p1 *[3]float32, filter RayFilterHandler, userData interface{},
 	prefilter RayPrefilterHandler) {
 	rayFilter = filter
 	rayPrefilter = prefilter
@@ -134,9 +158,9 @@ func (w *World) RayCast(p0 []float32, p1 []float32, filter RayFilterHandler, use
 }
 
 type ConvexCastReturnInfo struct {
-	Point            []float32
-	Normal           []float32
-	NormalOnHitPoint []float32
+	Point            *[4]float32
+	Normal           *[4]float32
+	NormalOnHitPoint *[4]float32
 	Penetration      float32
 	ContactID        int
 	HitBody          *Body
@@ -144,7 +168,7 @@ type ConvexCastReturnInfo struct {
 
 // NewtonWorldCollide: obsolete
 
-func (w *World) ConvexCast(matrix []float32, target []float32, shape *Collision, hitParam *float32,
+func (w *World) ConvexCast(matrix *[16]float32, target *[16]float32, shape *Collision, hitParam *float32,
 	userData interface{}, prefilter RayPrefilterHandler, maxContactsCount int, threadIndex int) []*ConvexCastReturnInfo {
 
 	rayPrefilter = prefilter
@@ -164,9 +188,9 @@ func (w *World) ConvexCast(matrix []float32, target []float32, shape *Collision,
 
 	for i := range returnInfo {
 		returnInfo[i] = &ConvexCastReturnInfo{
-			Point:            goFloats(&cInfo[i].m_point[0], 4),
-			Normal:           goFloats(&cInfo[i].m_normal[0], 4),
-			NormalOnHitPoint: goFloats(&cInfo[i].m_normalOnHitPoint[0], 4),
+			Point:            go4Floats(&cInfo[i].m_point[0]),
+			Normal:           go4Floats(&cInfo[i].m_normal[0]),
+			NormalOnHitPoint: go4Floats(&cInfo[i].m_normalOnHitPoint[0]),
 			Penetration:      float32(cInfo[i].m_penetration),
 			ContactID:        int(cInfo[i].m_contactID),
 			HitBody:          &Body{cInfo[i].m_hitBody},
@@ -211,9 +235,9 @@ func (w *World) SetMaterialCollisionCallback(matid0, matid1 int, userData interf
 }
 
 type MeshCollisionCollideDesc struct {
-	M_boxP0               []float32
-	M_boxP1               []float32
-	M_boxDistanceTravel   []float32
+	M_boxP0               *[4]float32
+	M_boxP1               *[4]float32
+	M_boxDistanceTravel   *[4]float32
 	M_threadNumber        int
 	M_faceCount           int
 	M_vertexStrideInBytes int
@@ -223,7 +247,7 @@ type MeshCollisionCollideDesc struct {
 	M_polySoupBody        *Body
 	M_objCollision        *Collision
 	M_polySoupCollision   *Collision
-	M_vertex              []float32
+	M_vertex              *[3]float32
 	M_faceIndexCount      *int
 	M_faceVertexIndex     *int
 }
@@ -247,7 +271,7 @@ type MeshCollisionCollideDesc struct {
 //Skip heightfields for now
 
 type CollisionTreeRayCastCallback func(body *Body, treeCollision *Collision, interception float32,
-	normal []float32, faceId int, userData interface{}) float32
+	normal *[3]float32, faceId int, userData interface{}) float32
 
 var collisionTreeRayOwners = make(map[owner]CollisionTreeRayCastCallback)
 
@@ -257,7 +281,7 @@ func goCollisionTreeRayCastCallback(body *C.NewtonBody, treeCollision *C.NewtonC
 	b := &Body{body}
 	col := &Collision{handle: treeCollision}
 
-	return C.dFloat(collisionTreeRayOwners[owner(treeCollision)](b, col, float32(interception), goFloats(normal, 3),
+	return C.dFloat(collisionTreeRayOwners[owner(treeCollision)](b, col, float32(interception), go3Floats(normal),
 		int(faceId), ownerData[owner(userData)]))
 }
 
@@ -306,7 +330,7 @@ func (b *Body) DestructorCallback() BodyDestructorCallback {
 	return bodyDestructorCallbackOwners[owner(b.handle)]
 }
 
-type TransformCallback func(body *Body, matrix []float32, threadIndex int)
+type TransformCallback func(body *Body, matrix *[16]float32, threadIndex int)
 
 var transformCallbackOwners = make(map[owner]TransformCallback)
 
@@ -314,7 +338,7 @@ var transformCallbackOwners = make(map[owner]TransformCallback)
 func goTransformCallback(body *C.NewtonBody, matrix *C.dFloat, threadIndex C.int) {
 	b := &Body{body}
 
-	transformCallbackOwners[owner(body)](b, goFloats(matrix, 16), int(threadIndex))
+	transformCallbackOwners[owner(body)](b, go16Floats(matrix), int(threadIndex))
 }
 
 func (b *Body) SetTransformCallback(callback TransformCallback) {
@@ -347,7 +371,7 @@ func (b *Body) ForceAndTorqueCallback() ApplyForceAndTorque {
 	return applyForceAndTorqueOwners[owner(b.handle)]
 }
 
-type BuoyancyPlaneHandler func(collisionID int, context interface{}, globalSpaceMatrix, globalSpacePlane []float32) int
+type BuoyancyPlaneHandler func(collisionID int, context interface{}, globalSpaceMatrix *[16]float32, globalSpacePlane *[4]float32) int
 
 var getBuoyancyPlane BuoyancyPlaneHandler
 
@@ -355,12 +379,12 @@ var getBuoyancyPlane BuoyancyPlaneHandler
 func goBuoyancyPlaneCallback(collisionID C.int, context unsafe.Pointer, globalSpaceMatrix,
 	globalSpacePlane *C.dFloat) C.int {
 
-	return C.int(getBuoyancyPlane(int(collisionID), ownerData[owner(context)], goFloats(globalSpaceMatrix, 16),
-		goFloats(globalSpacePlane, 16)))
+	return C.int(getBuoyancyPlane(int(collisionID), ownerData[owner(context)], go16Floats(globalSpaceMatrix),
+		go4Floats(globalSpacePlane)))
 }
 
 func (b *Body) AddBuoyancyForce(fluidDensity, fluidLinearViscosity, fluidAngularViscosity float32,
-	gravityVector []float32, buoyancyPlane BuoyancyPlaneHandler, context interface{}) {
+	gravityVector *[3]float32, buoyancyPlane BuoyancyPlaneHandler, context interface{}) {
 	getBuoyancyPlane = buoyancyPlane
 
 	ownerData[owner(&context)] = context
@@ -499,7 +523,7 @@ func goNewtonCollisionIterator(userData unsafe.Pointer, vertexCount C.int, faceA
 		int(faceID))
 }
 
-func (c *Collision) ForEachPolygonDo(matrix []float32, callback CollisionIterator, userData interface{}) {
+func (c *Collision) ForEachPolygonDo(matrix *[16]float32, callback CollisionIterator, userData interface{}) {
 	newtonCollisionIterator = callback
 	ownerData[owner(&userData)] = userData
 	C.setForEachPolygonDo(c.handle, (*C.dFloat)(&matrix[0]), unsafe.Pointer(&userData))
