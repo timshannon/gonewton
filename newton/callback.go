@@ -11,6 +11,7 @@ package newton
 */
 import "C"
 import (
+	"reflect"
 	"unsafe"
 )
 
@@ -24,20 +25,33 @@ import (
 
 type owner unsafe.Pointer
 
+func prepSlice(slicePtr unsafe.Pointer, cArrayPtr unsafe.Pointer, length int) {
+	slcHead := (*reflect.SliceHeader)(slicePtr)
+	slcHead.Cap = length
+	slcHead.Len = length
+	slcHead.Data = uintptr(cArrayPtr)
+}
+
 //goFloats creates a float32 slice of the given size of the passed in c array pointer
 func goFloats(cArray *C.dFloat, size int) []float32 {
-	//Copy for now.  Maybe we'll try with using the slice header to repoint the data
-	// instead if preformance thrashes with this
-	// Maybe use a temp array stored on the callback owner
-	slice := make([]float32, size)
-	C.CopyFloat32Array(cArray, (*C.dFloat)(&slice[0]), C.int(size))
+	var slice []float32
+
+	prepSlice(unsafe.Pointer(&slice), unsafe.Pointer(cArray), size)
+	return slice
+}
+
+func goBytes(cArray unsafe.Pointer, size int) []byte {
+	var slice []byte
+
+	prepSlice(unsafe.Pointer(&slice), cArray, size)
 	return slice
 }
 
 func go16Floats(cArray *C.dFloat) *[16]float32 {
 	gArray := [16]float32{}
+	slice := gArray[:]
 
-	C.CopyFloat32Array(cArray, (*C.dFloat)(&gArray[0]), C.int(16))
+	prepSlice(unsafe.Pointer(&slice), unsafe.Pointer(cArray), 16)
 
 	return &gArray
 }
@@ -45,7 +59,9 @@ func go16Floats(cArray *C.dFloat) *[16]float32 {
 func go3Floats(cArray *C.dFloat) *[3]float32 {
 	gArray := [3]float32{}
 
-	C.CopyFloat32Array(cArray, (*C.dFloat)(&gArray[0]), C.int(3))
+	slice := gArray[:]
+
+	prepSlice(unsafe.Pointer(&slice), unsafe.Pointer(cArray), 3)
 
 	return &gArray
 }
@@ -53,9 +69,18 @@ func go3Floats(cArray *C.dFloat) *[3]float32 {
 func go4Floats(cArray *C.dFloat) *[4]float32 {
 	gArray := [4]float32{}
 
-	C.CopyFloat32Array(cArray, (*C.dFloat)(&gArray[0]), C.int(4))
+	slice := gArray[:]
+
+	prepSlice(unsafe.Pointer(&slice), unsafe.Pointer(cArray), 4)
 
 	return &gArray
+}
+
+func goFloat64s(cArray *C.double, size int) []float64 {
+	var slice []float64
+
+	prepSlice(unsafe.Pointer(&slice), unsafe.Pointer(cArray), size)
+	return slice
 }
 
 type GetTicksCountHandler func() uint32
@@ -527,4 +552,33 @@ func (c *Collision) ForEachPolygonDo(matrix *[16]float32, callback CollisionIter
 	newtonCollisionIterator = callback
 	ownerData[owner(&userData)] = userData
 	C.setForEachPolygonDo(c.handle, (*C.dFloat)(&matrix[0]), unsafe.Pointer(&userData))
+}
+
+type DeserializeCallback func(serializeHandle interface{}, buffer []byte)
+
+var newtonDeserializeCallback DeserializeCallback
+
+//export goNewtonDeserializeCallback
+func goNewtonDeserializeCallback(serializeHandle unsafe.Pointer, buffer unsafe.Pointer, size C.int) {
+	newtonDeserializeCallback(ownerData[owner(&serializeHandle)], goBytes(buffer, int(size)))
+}
+
+func (w *World) CreateCollisionFromSerialization(deserializeFunc DeserializeCallback, serializeHandle interface{}) *Collision {
+	ownerData[owner(&serializeHandle)] = serializeHandle
+	return &Collision{C.createCollisionFromSerialization(w.handle, unsafe.Pointer(&serializeHandle))}
+}
+
+type SerializeCallback func(serializeHandle interface{}, buffer []byte)
+
+var newtonSerializeCallback SerializeCallback
+
+//export goNewtonSerializeCallback
+func goNewtonSerializeCallback(serializeHandle unsafe.Pointer, buffer unsafe.Pointer, size C.int) {
+	newtonSerializeCallback(ownerData[owner(&serializeHandle)], goBytes(buffer, int(size)))
+}
+
+func (w *World) SerializeCollision(collision *Collision, serializeFunc SerializeCallback, serializeHandle interface{}) {
+	ownerData[owner(&serializeHandle)] = serializeHandle
+	C.serializeCollision(w.handle, collision.handle, unsafe.Pointer(&serializeHandle))
+
 }

@@ -92,31 +92,20 @@ void UniversalSetUserCallback(NewtonJoint* joint) {
 }
 
 NewtonMesh* MeshSimplify(NewtonMesh* mesh, int maxVertextCount) {
-	NewtonMeshSimplify(mesh, maxVertextCount, (NewtonReportProgress)goReportProgress);
+	return NewtonMeshSimplify(mesh, maxVertextCount, (NewtonReportProgress)goReportProgress);
 }
 NewtonMesh* MeshApproximateConvexDecomposition(NewtonMesh* mesh, dFloat maxConcavity, dFloat backFaceDistanceFactor, int maxCount, int maxVertexPerHull) {
-	NewtonMeshApproximateConvexDecomposition(mesh, maxConcavity, backFaceDistanceFactor, maxCount, maxVertexPerHull, (NewtonReportProgress)goReportProgress);
+	return NewtonMeshApproximateConvexDecomposition(mesh, maxConcavity, backFaceDistanceFactor, maxCount, maxVertexPerHull, (NewtonReportProgress)goReportProgress);
 }
 
 void setForEachPolygonDo(NewtonCollision* collision, dFloat* matrix, void* userData) {
 	NewtonCollisionForEachPolygonDo(collision, matrix, (NewtonCollisionIterator)goNewtonCollisionIterator, userData);
 }
 
-//helpers
-void CopyFloat32Array(dFloat* src, dFloat* dest, int len) {
-	int i;
-	for(i = 0; i < len; i++) 
-		dest[i] = src[i];
-}
-void CopyFloat64Array(dFloat64* src, dFloat64* dest, int len) {
-	int i;
-	for(i = 0; i < len; i++) 
-		dest[i] = src[i];
+NewtonCollision* createCollisionFromSerialization(NewtonWorld* world ,void* handle) {
+	return NewtonCreateCollisionFromSerialization(world, (NewtonDeserializeCallback)goNewtonDeserializeCallback, handle);	
 }
 
-
-void CopyShortArray(short* src, short* dest, int len) {
-	int i;
-	for(i = 0; i < len; i++) 
-		dest[i] = src[i];
+void serializeCollision(NewtonWorld* world, NewtonCollision* collision, void* handle) {
+	NewtonCollisionSerialize(world, collision, (NewtonSerializeCallback)goNewtonSerializeCallback, handle);
 }
