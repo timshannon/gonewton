@@ -10,6 +10,7 @@ package newton
 #include <stdlib.h>
 */
 import "C"
+import "reflect"
 import "unsafe"
 
 type Joint struct {
@@ -87,7 +88,12 @@ func get4x4Float(array [4][4]C.dFloat) *[16]float32 {
 	gArray := [16]float32{}
 	for i := 0; i < 4; i++ {
 		slice := gArray[i : i+4]
-		C.CopyFloat32Array(&array[i][0], (*C.dFloat)(&slice[0]), C.int(4))
+
+		slcHead := (*reflect.SliceHeader)(unsafe.Pointer(&slice))
+		slcHead.Cap = 16
+		slcHead.Len = 4
+		slcHead.Data = uintptr(unsafe.Pointer(&array[i][0]))
+
 	}
 
 	return &gArray
@@ -173,9 +179,15 @@ func (segment *DeformableMeshSegment) IndexCount() int {
 	return int(C.NewtonDeformableMeshSegmentGetIndexCount(segment.collisionParent, segment.handle))
 }
 
-func (segment *DeformableMeshSegment) IndexList(result []int) {
+func (segment *DeformableMeshSegment) IndexList() []int {
 	indexList := C.NewtonDeformableMeshSegmentGetIndexList(segment.collisionParent, segment.handle)
-	C.CopyShortArray(indexList, (*C.short)(unsafe.Pointer(&result[0])), C.int(len(result)))
+
+	//FIXME: Size = 3 * indexCount? Is that right?  No documenatation
+	size := 3 * segment.IndexCount()
+
+	var result []int
+	prepSlice(unsafe.Pointer(&result), unsafe.Pointer(indexList), size)
+	return result
 }
 
 //Ball and Socket Joint

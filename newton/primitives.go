@@ -534,24 +534,24 @@ func (m *Mesh) PointStrideInByte() int {
 	return int(C.NewtonMeshGetPointStrideInByte(m.handle))
 }
 
-func (m *Mesh) PointArray(array []float64) {
+func (m *Mesh) PointArray(size int) []float64 {
 	cArray := C.NewtonMeshGetPointArray(m.handle)
-	C.CopyFloat64Array(cArray, (*C.dFloat64)(&array[0]), C.int(len(array)))
+	return goFloat64s(cArray, size)
 }
 
-func (m *Mesh) NormalArray(array []float64) {
+func (m *Mesh) NormalArray(size int) []float64 {
 	cArray := C.NewtonMeshGetNormalArray(m.handle)
-	C.CopyFloat64Array(cArray, (*C.dFloat64)(&array[0]), C.int(len(array)))
+	return goFloat64s(cArray, size)
 }
 
-func (m *Mesh) UV0Array(array []float64) {
+func (m *Mesh) UV0Array(size int) []float64 {
 	cArray := C.NewtonMeshGetUV0Array(m.handle)
-	C.CopyFloat64Array(cArray, (*C.dFloat64)(&array[0]), C.int(len(array)))
+	return goFloat64s(cArray, size)
 }
 
-func (m *Mesh) UV1Array(array []float64) {
+func (m *Mesh) UV1Array(size int) []float64 {
 	cArray := C.NewtonMeshGetUV1Array(m.handle)
-	C.CopyFloat64Array(cArray, (*C.dFloat64)(&array[0]), C.int(len(array)))
+	return goFloat64s(cArray, size)
 }
 
 func (m *Mesh) VertexCount() int {
@@ -562,9 +562,9 @@ func (m *Mesh) VertexStrideInByte() int {
 	return int(C.NewtonMeshGetVertexStrideInByte(m.handle))
 }
 
-func (m *Mesh) VertexArray(array []float64) {
+func (m *Mesh) VertexArray(size int) []float64 {
 	cArray := C.NewtonMeshGetVertexArray(m.handle)
-	C.CopyFloat64Array(cArray, (*C.dFloat64)(&array[0]), C.int(len(array)))
+	return goFloat64s(cArray, size)
 }
 
 type MeshVertex struct {

@@ -92,6 +92,11 @@ func (w *World) NextBody(curBody *Body) *Body {
 	return &Body{C.NewtonWorldGetNextBody(w.handle, curBody.handle)}
 }
 
+func (w *World) SerializeToFile(filename string) {
+	cFileName := C.CString(filename)
+	C.NewtonSerializeToFile(w.handle, cFileName)
+}
+
 //Low level standalone collision todo later
 //func (w *World) CollisionPointDistance(point []float32, collision *Collision,
 
