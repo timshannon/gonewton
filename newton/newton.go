@@ -29,6 +29,7 @@ func CreateWorld() *World {
 }
 
 func (w *World) Destroy() {
+	ownerData = make(map[owner]interface{})
 	C.NewtonDestroy(w.handle)
 }
 
