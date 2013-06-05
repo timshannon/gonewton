@@ -1,0 +1,17 @@
+Newton Dynamics is an accurate 3d Physics Library for real-time simulation of physics environments. 
+This library allows you to call it from Go code.
+
+This library will be targeting the 300 version of Newton.
+
+Quick Start
+Build Newton (instructions here). Note, currently you need to build newton with 
+DG_USE_THREAD_EMULATION defined (-DDG_USE_THREAD_EMULATION for gcc) as CGO 
+doesn't currently support callbacks from non-native threads.
+
+Run
+
+go get bitbucket.org/tshannon/gonewton/newton
+
+Then in your go code
+
+import "bitbucket.org/tshannon/gonewton/newton"
