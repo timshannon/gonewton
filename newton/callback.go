@@ -579,6 +579,7 @@ func goNewtonSerializeCallback(serializeHandle unsafe.Pointer, buffer unsafe.Poi
 
 func (w *World) SerializeCollision(collision *Collision, serializeFunc SerializeCallback, serializeHandle interface{}) {
 	ownerData[owner(&serializeHandle)] = serializeHandle
+	newtonSerializeCallback = serializeFunc
 	C.serializeCollision(w.handle, collision.handle, unsafe.Pointer(&serializeHandle))
 
 }
